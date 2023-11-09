@@ -1,0 +1,13 @@
+venv
+.env
+db.sqlite3
+# Python Files
+*.log
+*.pot
+*.pyc
+.idea/*
+__pycache__/
+db.sqlite3
+**/migrations/*
+!**/migrations
+!**/migrations/__init__.py
