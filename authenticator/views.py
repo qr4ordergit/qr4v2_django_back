@@ -68,12 +68,52 @@ def UserLogin(request):
         )
 
         if 'AuthenticationResult' in response:
-            print("User authentication successful.")
-            data = response['AuthenticationResult']['AccessToken']
-            return JsonResponse({'success': True, 'data': data})
+            access_token = response['AuthenticationResult']['AccessToken']
+            user_info = cognito_client.get_user(
+                AccessToken=access_token
+            )
+
+            user_attributes = user_info['UserAttributes']
+            print(user_info)
+            print(user_attributes)
+            user_data = {}
+            for attribute in user_attributes:
+                user_data[attribute['Name']] = attribute['Value']
+
+
+            return JsonResponse({'success': True, 'data': access_token})
         else:
             return JsonResponse({'success': True, 'message': 'User Not Authenticated.'})
     except botocore.exceptions.ClientError as e:
         print(f"Authentication failed: {e}")        
 
         return JsonResponse({'success': False})         
+    
+
+@csrf_exempt    
+def account_recovery(request):
+    try:
+        email = request.POST.get('email')
+
+        response = cognito_client.forgot_password(
+            ClientId=client_id,
+            Username=email,
+        )
+
+        return JsonResponse({'success': True, 'message': 'Password recovery initiated successfully. Check your email for instructions."'})
+    
+    except cognito_client.exceptions.UserNotFoundException:
+        print("User not found. Please check the username and try again.")
+        return JsonResponse({'success': True,'message':"User not found. Please check the username and try again."})
+    
+    except cognito_client.exceptions.NotAuthorizedException:
+        print("User is not authorized to initiate password recovery. Please contact support.")
+        return JsonResponse({'success': True, 'data': response,'message':"User is not authorized to initiate password recovery. Please contact support."})
+    
+    except cognito_client.exceptions.LimitExceededException:
+        print("Request limit exceeded. Please try again later.")
+        return JsonResponse({'success': True, 'data': response,'message':"Request limit exceeded. Please try again later."})
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")  
+        return JsonResponse({'success': True, 'data': response,'message':[e]})
