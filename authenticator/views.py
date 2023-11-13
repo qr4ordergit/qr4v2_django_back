@@ -73,16 +73,18 @@ def UserLogin(request):
             expires_in_seconds  = response['AuthenticationResult']['ExpiresIn']
 
             expiration_time = datetime.datetime.now() + datetime.timedelta(seconds=expires_in_seconds)
+            print(f"Access token expiration time (in seconds): {expiration_time.strftime("%Y-%m-%d %H:%M:%S")}")
 
             user_info = cognito_client.get_user(
                 AccessToken=access_token
             )
-            
-            print(f"Access token expiration time (in seconds): {expiration_time.strftime("%Y-%m-%d %H:%M:%S")}")
 
+            # This is to check email verified or not
+            email_verified = next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'email_verified'), 'N/A')
 
-            user_attributes = user_info.get('UserAttributes', [])
+            user_attributes = user_info.get('UserAttributes', []) # this is to fetch all user_attributes
             print(f"User attributes: {user_attributes}")
+            print(f"User email_verified: {email_verified}")
 
             user_attributes = user_info['UserAttributes']
             # print(user_info)
