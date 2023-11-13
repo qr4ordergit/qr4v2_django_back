@@ -6,6 +6,7 @@ from django.conf import settings
 import boto3
 import botocore
 from getpass import getpass
+import datetime
 
 cognito_region = settings.AWS_REGION  
 client_id = settings.COGNITO_APP_CLIENT_ID  
@@ -69,17 +70,26 @@ def UserLogin(request):
 
         if 'AuthenticationResult' in response:
             access_token = response['AuthenticationResult']['AccessToken']
+            expires_in_seconds  = response['AuthenticationResult']['ExpiresIn']
+
+            expiration_time = datetime.datetime.now() + datetime.timedelta(seconds=expires_in_seconds)
+
             user_info = cognito_client.get_user(
                 AccessToken=access_token
             )
+            
+            print(f"Access token expiration time (in seconds): {expiration_time.strftime("%Y-%m-%d %H:%M:%S")}")
+
+
+            user_attributes = user_info.get('UserAttributes', [])
+            print(f"User attributes: {user_attributes}")
 
             user_attributes = user_info['UserAttributes']
-            print(user_info)
-            print(user_attributes)
+            # print(user_info)
+            # print(user_attributes)
             user_data = {}
             for attribute in user_attributes:
                 user_data[attribute['Name']] = attribute['Value']
-
 
             return JsonResponse({'success': True, 'data': access_token})
         else:
@@ -89,7 +99,7 @@ def UserLogin(request):
 
         return JsonResponse({'success': False})         
     
-
+    
 @csrf_exempt    
 def account_recovery(request):
     try:
