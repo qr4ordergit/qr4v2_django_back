@@ -37,7 +37,7 @@ msgid "1114"
 msgstr "Show password"
 
 msgid "1115"
-msgstr "Don't have an account? Then register!"
+msgstr "Don't have an account?"
 
 msgid "1116"
 msgstr "Back to home"
@@ -62,7 +62,7 @@ msgid "1122"
 msgstr "Forgot password?"
 
 msgid "1123"
-msgstr " Register then!"
+msgstr "Register then!"
 
 msgid "1124"
 msgstr "Enter Email"
@@ -74,7 +74,7 @@ msgid "1126"
 msgstr "Enter Email"
 
 msgid "1127"
-msgstr "Enter Password"
+msgstr "Please enter Password"
 
 msgid "1128"
 msgstr "Please verify the captcha"
