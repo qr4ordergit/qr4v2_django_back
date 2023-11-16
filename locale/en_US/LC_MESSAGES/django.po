@@ -1,0 +1,62 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-11-15 21:27+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: .\qr4order\settings.py:146
+msgid "English"
+msgstr ""
+
+#: .\qr4order\settings.py:152
+msgid "Romanian"
+msgstr ""
+
+#: .\qr4order\settings.py:153
+msgid "Ukrainian"
+msgstr ""
+
+msgid "1111"
+msgstr "Login"
+
+msgid "1112"
+msgstr "Email/Username"
+
+
+msgid "1113"
+msgstr "Password"
+
+msgid "1114"
+msgstr "Show password"
+
+msgid "1115"
+msgstr "Don't have an account? Then register!"
+
+msgid "1116"
+msgstr "Back home"
+
+msgid "1117"
+msgstr "Register"
+
+msgid "1118"
+msgstr "Establishment Name" 
+
+
+msgid "1119"
+msgstr "Email" 
+
+msgid "1120"
+msgstr "Confirm password" 
+
+msgid "1121"
+msgstr "I have read and agree to the terms and conditions."
+
+msgid "1122"
+msgstr "Forgot password?"

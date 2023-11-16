@@ -1,0 +1,65 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-11-15 20:38+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: .\qr4order\settings.py:143
+msgid "English"
+msgstr ""
+
+#: .\qr4order\settings.py:149
+msgid "Romanian"
+msgstr ""
+
+#: .\qr4order\settings.py:150
+msgid "1111"
+msgstr "Логін"
+
+msgid "1112"
+msgstr "Електронна пошта/ім’я користувача"
+
+
+msgid "1113"
+msgstr "Пароль"
+
+msgid "1114"
+msgstr "Показати пароль"
+
+msgid "1115"
+msgstr "Немає облікового запису? Тоді реєструйтесь!"
+
+msgid "1116"
+msgstr "Назад додому"
+
+msgid "1117"
+msgstr "зареєструватися"
+
+msgid "1118"
+msgstr "Назва закладу" 
+
+
+msgid "1119"
+msgstr "Електронна пошта" 
+
+msgid "1120"
+msgstr "Підтвердьте пароль" 
+
+msgid "1121"
+msgstr "Я прочитав і погоджуюся з положеннями та умовами."
+
+msgid "1122"
+msgstr "Забули свій пароль?"
