@@ -40,7 +40,7 @@ msgid "1115"
 msgstr "Don't have an account? Then register!"
 
 msgid "1116"
-msgstr "Back home"
+msgstr "Back to home"
 
 msgid "1117"
 msgstr "Register"
@@ -60,3 +60,38 @@ msgstr "I have read and agree to the terms and conditions."
 
 msgid "1122"
 msgstr "Forgot password?"
+
+msgid "1123"
+msgstr " Register then!"
+
+msgid "1124"
+msgstr "Enter Email"
+
+msgid "1125"
+msgstr "Enter password"
+
+msgid "1126"
+msgstr "Enter Email"
+
+msgid "1127"
+msgstr "Enter Password"
+
+msgid "1128"
+msgstr "Please verify the captcha"
+
+msgid "1129"
+msgstr "Enter Establishment Name"
+
+msgid "1130"
+msgstr "Please enter Establishment Name"
+
+msgid "1131"
+msgstr "Please enter email id"
+
+msgid "1132"
+msgstr "Please agree to the Terms and Conditions"
+
+msgid "1133"
+msgstr "Password is  not matching"
+
+
