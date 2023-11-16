@@ -48,7 +48,6 @@ msgstr "Register"
 msgid "1118"
 msgstr "Establishment Name" 
 
-
 msgid "1119"
 msgstr "Email" 
 
@@ -65,16 +64,16 @@ msgid "1123"
 msgstr "Register then!"
 
 msgid "1124"
-msgstr "Enter Email"
+msgstr "Enter email"
 
 msgid "1125"
 msgstr "Enter password"
 
 msgid "1126"
-msgstr "Enter Email"
+msgstr "Please enter email"
 
 msgid "1127"
-msgstr "Please enter Password"
+msgstr "Please enter password"
 
 msgid "1128"
 msgstr "Please verify the captcha"
