@@ -13,7 +13,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -24,6 +23,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'authenticator',
     'api',
+    'corsheaders',
 
      # ...
     'allauth',
@@ -63,6 +63,7 @@ MIDDLEWARE = [
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'qr4order.urls'
@@ -115,10 +116,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -146,4 +143,19 @@ LANGUAGES = [
     # ('zh-hans',_('Chinese Simplified')),
     ('ro',_('Romanian')),
     ('ua',_('Ukrainian'))
+]
+
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000','http://localhost:3000']
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:3000','http://localhost:3000']
+
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "PATCH",
+    "POST",
+    "PUT",
+    "OPTIONS",
 ]
