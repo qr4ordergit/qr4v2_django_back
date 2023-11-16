@@ -98,6 +98,6 @@ msgid "1134"
 msgstr "Already have an account?"
 
 msgid "1135"
-msgstr "login then!"
+msgstr "Login then!"
 
 
