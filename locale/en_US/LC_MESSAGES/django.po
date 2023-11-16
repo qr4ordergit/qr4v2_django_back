@@ -94,4 +94,10 @@ msgstr "Please agree to the Terms and Conditions"
 msgid "1133"
 msgstr "Password is  not matching"
 
+msgid "1134"
+msgstr "Already have an account?"
+
+msgid "1135"
+msgstr "login then!"
+
 
