@@ -13,6 +13,8 @@ client_id = settings.COGNITO_APP_CLIENT_ID
 cognito_client = boto3.client('cognito-idp', region_name=cognito_region)
 # class CustomSignupView(SignupView):
 # @csrf_protect
+
+
 @csrf_exempt
 def UserRegistration(request):
     
@@ -73,7 +75,7 @@ def UserLogin(request):
             expires_in_seconds  = response['AuthenticationResult']['ExpiresIn']
 
             expiration_time = datetime.datetime.now() + datetime.timedelta(seconds=expires_in_seconds)
-            print(f"Access token expiration time (in seconds): {expiration_time.strftime("%Y-%m-%d %H:%M:%S")}")
+            print(f"Access token expiration time (in seconds): {expiration_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
             user_info = cognito_client.get_user(
                 AccessToken=access_token

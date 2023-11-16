@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'authenticator',
+    'api',
 
      # ...
     'allauth',
@@ -59,6 +60,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ]
@@ -123,15 +125,25 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
+USE_L10N = True
+
+
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOCALE_PATHS = [os.path.join(BASE_DIR, 'locale')]
+from django.utils.translation import gettext_lazy as _
+
+LANGUAGES = [
+    ('en-us',_('English')),
+    # ('th',_('Thailand')),
+    # ('ja',_('Japanese')),
+    # ('ko',_('Korean')),
+    # ('it',_('Italian')),
+    # ('zh-hans',_('Chinese Simplified')),
+    ('ro',_('Romanian')),
+    ('ua',_('Ukrainian'))
+]
