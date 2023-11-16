@@ -27,8 +27,9 @@ class LanguageDetails(APIView):
         
         translation.activate(lang)
         translations = {}
-
-        po = polib.pofile(f"locale/{lang}/LC_MESSAGES/django.po")
+        lang_clean = "en_US" if lang == "en-us" else lang
+        
+        po = polib.pofile(f"locale/{lang_clean}/LC_MESSAGES/django.po")
 
         for entry in po:
             translations[str(entry.msgid)] = _(str(entry.msgid))

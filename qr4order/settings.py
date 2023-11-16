@@ -144,7 +144,7 @@ LANGUAGES = [
     # ('ko',_('Korean')),
     # ('it',_('Italian')),
     # ('zh-hans',_('Chinese Simplified')),
-    ('ro',_('Romanian')),
+    # ('ro',_('Romanian')),
     ('ua',_('Ukrainian'))
 ]
 

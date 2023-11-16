@@ -12,16 +12,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: .\qr4order\settings.py:146
-msgid "English"
-msgstr ""
+# msgid "English"
+# msgstr ""
 
 #: .\qr4order\settings.py:152
-msgid "Romanian"
-msgstr ""
+# msgid "Romanian"
+# msgstr ""
 
 #: .\qr4order\settings.py:153
-msgid "Ukrainian"
-msgstr ""
+# msgid "Ukrainian"
+# msgstr ""
 
 msgid "1111"
 msgstr "Login"
