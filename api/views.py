@@ -27,10 +27,11 @@ class LanguageDetails(APIView):
         
         translation.activate(lang)
         translations = {}
-        
-        for i in range(1111, 1123):
-            translations[str(i)] = _(str(i))
-        
+
+        po = polib.pofile(f"locale/{lang}/LC_MESSAGES/django.po")
+
+        for entry in po:
+            translations[str(entry.msgid)] = _(str(entry.msgid))
         return JsonResponse(translations)
 
         
