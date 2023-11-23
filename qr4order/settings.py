@@ -24,6 +24,8 @@ INSTALLED_APPS = [
     'authenticator',
     'api',
     'corsheaders',
+    'menu',
+    'restaurant',
 
      # ...
     'allauth',
