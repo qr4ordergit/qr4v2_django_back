@@ -45,10 +45,8 @@ COGNITO_APP_CLIENT_ID = os.getenv("COGNITO_APP_CLIENT_ID") # 'YOUR_CLIENT_ID'
 
 
 AUTHENTICATION_BACKENDS = [
-    # ...
     'allauth.account.auth_backends.AuthenticationBackend',
     'django.contrib.auth.backends.ModelBackend',
-    # ...
 ]
 
 
