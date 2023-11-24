@@ -4,13 +4,14 @@ from django.views.decorators.csrf import csrf_exempt,csrf_protect
 from allauth.account.views import LoginView, SignupView, LogoutView
 from django.conf import settings
 import boto3
-import botocore
+from botocore.exceptions import ClientError
+
 from getpass import getpass
 import datetime
 
-
+from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
 from jose import jwt
-
+import requests
 
 cognito_region = settings.AWS_REGION  
 client_id = settings.COGNITO_APP_CLIENT_ID  
@@ -28,22 +29,62 @@ def UserRegistration(request):
         password = request.POST.get('password')
         establishment_name = request.POST.get('establishment_name')
 
-        user_attributes = [
-        {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
-        ]
+        if email:
+            user_attributes = [
+            # {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
+            # {'Name': 'custom:restuarent_name', 'Value': ''},
+            {'Name': 'email', 'Value': email},
+            ]
 
-        response = cognito_client.sign_up(
-            ClientId=client_id,
-            Username=email,
-            Password=password,
-            UserAttributes=user_attributes
-        )
+            response = cognito_client.sign_up(
+                ClientId=client_id,
+                Username=email,
+                Password=password,
+                UserAttributes=user_attributes
+            )
 
-        print("User signup successful. Confirm signup with the code sent to your email.")
-        
-        return JsonResponse({'success': True, 'data': response})
+            # response = cognito_client.admin_add_user_to_group(
+            #     UserPoolId = user_pool_id,
+            #     Username = email,
+            #     GroupName = 'Owner',
+            #     )
+            
+            return JsonResponse({'success': True, 'data': response, 'message':'User signup successful. Confirm signup with the code sent to your email.'})
+  
+        else:
+            restuarent_name = request.POST.get('restuarent_name')
+            group_name = request.POST.get('group_name')
+            role = request.POST.get('role')
+            placeholder_email = f'{role}@example.com'
     
-    except botocore.exceptions.ClientError as e:
+            password = f'Qr4oreder@{password}'
+            user_attributes = [
+            # {'Name': 'custom:Establishment_Names', 'Value': ''},
+            # {'Name': 'custom:restuarent_name', 'Value': restuarent_name},
+            {'Name': 'email', 'Value':placeholder_email},
+            {'Name': 'email_verified', 'Value': 'True'},
+
+            ]
+
+            response = cognito_client.admin_create_user(
+                UserPoolId = user_pool_id,
+                Username=role,
+                TemporaryPassword=password,
+                UserAttributes=user_attributes,
+                ForceAliasCreation=False
+            )
+
+            # response = cognito_client.admin_add_user_to_group(
+            #     UserPoolId=user_pool_id,
+            #     Username= role,
+            #     GroupName=group_name,
+            #     )
+
+            
+            return JsonResponse({'success': True, 'data': response, "message":"User Createtion successful."})
+
+    
+    except ClientError as e:
         print(f"User signup failed =>> {e}")
         message = {e}
         return JsonResponse({'success': False})
@@ -62,7 +103,7 @@ def UserAuthentication(request):
         print("User signup confirmed.")
 
         return JsonResponse({'success': True, 'data': response,'message':"User Authentication confirmed."})
-    except botocore.exceptions.ClientError as e:
+    except ClientError as e:
         print("UserAuthentication error = ",e)
         return JsonResponse({'success': False, })
 
@@ -80,63 +121,39 @@ def ResendConfirmationCode(request):
 
         return JsonResponse({'success': True, 'data': response, 'message':'Confirmation code resent successfully.'})
     
-    except botocore.exceptions.ClientError as e:
+    except ClientError as e:
         print(f"Error resending confirmation code: {e}")
         return JsonResponse({'success': False, 'message': str(e)})
 
-
-
-
-import requests
-
-def get_cognito_public_keys():
-    # Retrieve Cognito public keys
-    jwks_url = 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Ggw6POqGJ/.well-known/jwks.json'
-    response = requests.get(jwks_url)
-    jwks = response.json()['keys']
-    return {key['kid']: key for key in jwks}
-
-def verify_cognito_access_token(access_token, public_keys):
-    try:
-        # Decode and verify the access token
-        header = jwt.get_unverified_header(access_token)
-        kid = header['kid']
-        key = public_keys[kid]
-
-        decoded_token = jwt.decode(access_token, key, algorithms=['RS256'], audience='your-client-id')
-        return decoded_token
-    except jwt.ExpiredSignatureError:
-        print("Token has expired.")
-        return None
-    except jwt.JWTClaimsError:
-        print("Invalid token claims.")
-        return None
-    except Exception as e:
-        print(f"Token verification failed: {e}")
-        return None
-
-
-
-      
+  
 @csrf_exempt
 def UserLogin(request):
     try:
         email = request.POST.get('email')
         password = request.POST.get('password')
 
-        response = cognito_client.initiate_auth(
+        # response = cognito_client.initiate_auth(
+        #     ClientId=client_id,
+        #     AuthFlow='USER_PASSWORD_AUTH',
+        #     AuthParameters={
+        #         'USERNAME': email,
+        #         'PASSWORD': password
+        #     }
+        # )
+        response = cognito_client.admin_initiate_auth(
+            UserPoolId=user_pool_id,
             ClientId=client_id,
-            AuthFlow='USER_PASSWORD_AUTH',
+            AuthFlow='ADMIN_USER_PASSWORD_AUTH',
             AuthParameters={
                 'USERNAME': email,
-                'PASSWORD': password
+                'PASSWORD': password,
             }
         )
 
         if 'AuthenticationResult' in response:
             access_token = response['AuthenticationResult']['AccessToken']
 
-            # Verify the access token using python-jose
+            # Verifing the access token using python-jose
             public_keys = get_cognito_public_keys()
             decoded_token = verify_cognito_access_token(access_token, public_keys)
 
@@ -150,7 +167,7 @@ def UserLogin(request):
         else:
             return JsonResponse({'success': False, 'message': 'User Not Authenticated.'})
     
-    except botocore.exceptions.ClientError as e:
+    except ClientError as e:
         print(f"Authentication failed: {e}")
         return JsonResponse({'success': False, 'message': 'Error during authentication.'})       
     
