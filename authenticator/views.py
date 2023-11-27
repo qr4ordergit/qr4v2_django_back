@@ -75,14 +75,6 @@ def UserRegistration(request):
                 ForceAliasCreation=False,
             )
 
-        #     cognito_client.admin_update_user_attributes(
-        #     UserPoolId=user_pool_id,
-        #     Username=role,
-        #     UserAttributes=[
-        #         {'Name': 'email_verified', 'Value': 'True'},
-        #         # {'Name': 'confirmation_status', 'Value': 'Confirmed'},
-        #     ]
-        # )
 
             add_user_to_group = cognito_client.admin_add_user_to_group(
                 UserPoolId=user_pool_id,
@@ -112,8 +104,19 @@ def UserLogin(request):
                 'PASSWORD': password
             }
         )
-        
-            
+
+        if 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
+            # This code is essential for authenticating and validating users created by the owner.
+            session = response['Session']
+            staff_response = cognito_client.respond_to_auth_challenge(
+            ClientId=client_id,
+            ChallengeName='NEW_PASSWORD_REQUIRED',
+            ChallengeResponses={
+                'USERNAME': username_or_email,
+                'NEW_PASSWORD': password
+            },Session=session)
+
+            response = staff_response
 
         if 'AuthenticationResult' in response:
             access_token = response['AuthenticationResult']['AccessToken']
@@ -129,22 +132,7 @@ def UserLogin(request):
                 return JsonResponse({'success': True, 'message': 'Authenticated User.'})
             else:
                 return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
-            
-        elif 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
-
-            session = response['Session']
-            staff_response = cognito_client.respond_to_auth_challenge(
-            ClientId=client_id,
-            ChallengeName='NEW_PASSWORD_REQUIRED',
-            ChallengeResponses={
-                'USERNAME': username_or_email,
-                'NEW_PASSWORD': password
-            },Session=session)
-
-            return JsonResponse({'success': False, 'message': 'New password required.'})
-        else:
-            return JsonResponse({'success': False, 'message': 'User Not Authenticated.'})
-    
+             
     except ClientError as e:
         print(f"Authentication failed: {e}")
         return JsonResponse({'success': False, 'message': 'Error during authentication.'})    
