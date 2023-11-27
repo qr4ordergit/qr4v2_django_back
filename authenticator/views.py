@@ -27,7 +27,7 @@ def UserRegistration(request):
     try:
         email = request.POST.get('email')
         password = request.POST.get('password')
-        establishment_name = request.POST.get('establishment_name')
+        establishment_name = request.POST.get('establishment_names')
 
         if email:
             user_attributes = [
@@ -43,7 +43,7 @@ def UserRegistration(request):
                 UserAttributes=user_attributes
             )
 
-            response = cognito_client.admin_add_user_to_group(
+            add_owner_to_group = cognito_client.admin_add_user_to_group(
                 UserPoolId = user_pool_id,
                 Username = email,
                 GroupName = 'Owner',
@@ -53,37 +53,38 @@ def UserRegistration(request):
   
         else:
             restuarent_name = request.POST.get('restuarent_name')
-            group_name = request.POST.get('group_name')
+            group_name = 'Staff'
+            # group_name = request.POST.get('group_name')
             role = request.POST.get('role')
             placeholder_email = f'{role}@example.com'
     
             password = f'Qr4oreder@{password}'
             user_attributes = [
             {'Name': 'custom:Establishment_Names', 'Value': ''},
-            {'Name': 'custom:restuarent_name', 'Value': restuarent_name},
+            {'Name': 'custom:Restuarent_Name', 'Value': restuarent_name},
             {'Name': 'email', 'Value':placeholder_email},
-            # {'Name': 'email_verified', 'Value': 'True'},
+            {'Name': 'email_verified', 'Value': 'True'},
             # {'Name': 'UserStatus', 'Value': 'Confirmed'},   
             ]
 
-            response = cognito_client.sign_up(
-                ClientId=client_id,
+            response = cognito_client.admin_create_user(
+                UserPoolId=user_pool_id,
                 Username=role,
-                Password=password,
+                TemporaryPassword=password,
                 UserAttributes=user_attributes,
-                # ForceAliasCreation=False,
+                ForceAliasCreation=False,
             )
 
-            cognito_client.admin_update_user_attributes(
-            UserPoolId=user_pool_id,
-            Username=role,
-            UserAttributes=[
-                {'Name': 'email_verified', 'Value': 'True'},
-                # {'Name': 'confirmation_status', 'Value': 'Confirmed'},
-            ]
-        )
+        #     cognito_client.admin_update_user_attributes(
+        #     UserPoolId=user_pool_id,
+        #     Username=role,
+        #     UserAttributes=[
+        #         {'Name': 'email_verified', 'Value': 'True'},
+        #         # {'Name': 'confirmation_status', 'Value': 'Confirmed'},
+        #     ]
+        # )
 
-            response = cognito_client.admin_add_user_to_group(
+            add_user_to_group = cognito_client.admin_add_user_to_group(
                 UserPoolId=user_pool_id,
                 Username= role,
                 GroupName=group_name,
@@ -91,8 +92,7 @@ def UserRegistration(request):
 
             
             return JsonResponse({'success': True, 'data': response, "message":"User Createtion successful."})
-
-    
+          
     except ClientError as e:
         print(f"User signup failed =>> {e}")
         message = {e}
