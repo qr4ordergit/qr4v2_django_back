@@ -31,7 +31,7 @@ def UserRegistration(request):
 
         if email:
             user_attributes = [
-            # {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
+            {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
             # {'Name': 'custom:restuarent_name', 'Value': ''},
             {'Name': 'email', 'Value': email},
             ]
@@ -43,11 +43,11 @@ def UserRegistration(request):
                 UserAttributes=user_attributes
             )
 
-            # response = cognito_client.admin_add_user_to_group(
-            #     UserPoolId = user_pool_id,
-            #     Username = email,
-            #     GroupName = 'Owner',
-            #     )
+            response = cognito_client.admin_add_user_to_group(
+                UserPoolId = user_pool_id,
+                Username = email,
+                GroupName = 'Owner',
+                )
             
             return JsonResponse({'success': True, 'data': response, 'message':'User signup successful. Confirm signup with the code sent to your email.'})
   
@@ -59,26 +59,35 @@ def UserRegistration(request):
     
             password = f'Qr4oreder@{password}'
             user_attributes = [
-            # {'Name': 'custom:Establishment_Names', 'Value': ''},
-            # {'Name': 'custom:restuarent_name', 'Value': restuarent_name},
+            {'Name': 'custom:Establishment_Names', 'Value': ''},
+            {'Name': 'custom:restuarent_name', 'Value': restuarent_name},
             {'Name': 'email', 'Value':placeholder_email},
-            {'Name': 'email_verified', 'Value': 'True'},
-
+            # {'Name': 'email_verified', 'Value': 'True'},
+            # {'Name': 'UserStatus', 'Value': 'Confirmed'},   
             ]
 
-            response = cognito_client.admin_create_user(
-                UserPoolId = user_pool_id,
+            response = cognito_client.sign_up(
+                ClientId=client_id,
                 Username=role,
-                TemporaryPassword=password,
+                Password=password,
                 UserAttributes=user_attributes,
-                ForceAliasCreation=False
+                # ForceAliasCreation=False,
             )
 
-            # response = cognito_client.admin_add_user_to_group(
-            #     UserPoolId=user_pool_id,
-            #     Username= role,
-            #     GroupName=group_name,
-            #     )
+            cognito_client.admin_update_user_attributes(
+            UserPoolId=user_pool_id,
+            Username=role,
+            UserAttributes=[
+                {'Name': 'email_verified', 'Value': 'True'},
+                # {'Name': 'confirmation_status', 'Value': 'Confirmed'},
+            ]
+        )
+
+            response = cognito_client.admin_add_user_to_group(
+                UserPoolId=user_pool_id,
+                Username= role,
+                GroupName=group_name,
+                )
 
             
             return JsonResponse({'success': True, 'data': response, "message":"User Createtion successful."})
@@ -88,6 +97,57 @@ def UserRegistration(request):
         print(f"User signup failed =>> {e}")
         message = {e}
         return JsonResponse({'success': False})
+    
+@csrf_exempt
+def UserLogin(request):
+    try:
+        username_or_email = request.POST.get('username_or_email')
+        password = request.POST.get('password')
+
+        response = cognito_client.initiate_auth(
+            ClientId=client_id,
+            AuthFlow='USER_PASSWORD_AUTH',
+            AuthParameters={
+                'USERNAME': username_or_email,
+                'PASSWORD': password
+            }
+        )
+        
+            
+
+        if 'AuthenticationResult' in response:
+            access_token = response['AuthenticationResult']['AccessToken']
+
+            # Verifing the access token using python-jose
+            public_keys = get_cognito_public_keys()
+            decoded_token = verify_cognito_access_token(access_token, public_keys)
+
+            if decoded_token:
+                # Access token is valid, perform additional actions
+                user_data = {'sub': decoded_token.get('sub')}  # Include additional user data as needed
+                data= {'access_token': access_token, 'user_data': user_data}
+                return JsonResponse({'success': True, 'message': 'Authenticated User.'})
+            else:
+                return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
+            
+        elif 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
+
+            session = response['Session']
+            staff_response = cognito_client.respond_to_auth_challenge(
+            ClientId=client_id,
+            ChallengeName='NEW_PASSWORD_REQUIRED',
+            ChallengeResponses={
+                'USERNAME': username_or_email,
+                'NEW_PASSWORD': password
+            },Session=session)
+
+            return JsonResponse({'success': False, 'message': 'New password required.'})
+        else:
+            return JsonResponse({'success': False, 'message': 'User Not Authenticated.'})
+    
+    except ClientError as e:
+        print(f"Authentication failed: {e}")
+        return JsonResponse({'success': False, 'message': 'Error during authentication.'})    
 
 @csrf_exempt
 def UserAuthentication(request):
@@ -126,50 +186,7 @@ def ResendConfirmationCode(request):
         return JsonResponse({'success': False, 'message': str(e)})
 
   
-@csrf_exempt
-def UserLogin(request):
-    try:
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-
-        # response = cognito_client.initiate_auth(
-        #     ClientId=client_id,
-        #     AuthFlow='USER_PASSWORD_AUTH',
-        #     AuthParameters={
-        #         'USERNAME': email,
-        #         'PASSWORD': password
-        #     }
-        # )
-        response = cognito_client.admin_initiate_auth(
-            UserPoolId=user_pool_id,
-            ClientId=client_id,
-            AuthFlow='ADMIN_USER_PASSWORD_AUTH',
-            AuthParameters={
-                'USERNAME': email,
-                'PASSWORD': password,
-            }
-        )
-
-        if 'AuthenticationResult' in response:
-            access_token = response['AuthenticationResult']['AccessToken']
-
-            # Verifing the access token using python-jose
-            public_keys = get_cognito_public_keys()
-            decoded_token = verify_cognito_access_token(access_token, public_keys)
-
-            if decoded_token:
-                # Access token is valid, perform additional actions
-                user_data = {'sub': decoded_token.get('sub')}  # Include additional user data as needed
-                data= {'access_token': access_token, 'user_data': user_data}
-                return JsonResponse({'success': True, 'message': 'Authenticated User.'})
-            else:
-                return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
-        else:
-            return JsonResponse({'success': False, 'message': 'User Not Authenticated.'})
-    
-    except ClientError as e:
-        print(f"Authentication failed: {e}")
-        return JsonResponse({'success': False, 'message': 'Error during authentication.'})       
+   
     
     
 @csrf_exempt    
