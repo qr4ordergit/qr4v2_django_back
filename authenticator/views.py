@@ -48,7 +48,7 @@ class OwnerRegistration(APIView):
             add_owner_to_group = cognito_client.admin_add_user_to_group(
                 UserPoolId = user_pool_id,
                 Username = email,
-                GroupName = 'Owners',
+                GroupName = 'Owner',
                 )
 
             if response['UserSub'] and add_owner_to_group['ResponseMetadata']['HTTPStatusCode'] == 200:
@@ -56,9 +56,9 @@ class OwnerRegistration(APIView):
             
         except ClientError as e:
             print(f"User signup failed =>> {e}")
-            delete_user = cognito_client.admin_delete_user(
-                            UserPoolId=user_pool_id,
-                            Username=email )
+            # delete_user = cognito_client.admin_delete_user(
+            #                 UserPoolId=user_pool_id,
+            #                 Username=email )
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
     
 class EmployeeRegistration(APIView): 
