@@ -35,10 +35,10 @@ class OwnerRegistration(View):
         try:
             email = request.POST.get('email')
             password = request.POST.get('password')
-            establishment_name = request.POST.get('establishment_names')
+            # establishment_name = request.POST.get('establishment_names')
 
             user_attributes = [
-            {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
+            # {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
             {'Name': 'email', 'Value': email},
             ]
 
@@ -79,8 +79,8 @@ class EmployeeRegistration(View):
     
             password = f'Qr4oreder@{password}'
             user_attributes = [
-            {'Name': 'custom:Establishment_Names', 'Value': ''},
-            {'Name': 'custom:Restuarent_Name', 'Value': restuarent_name},
+            # {'Name': 'custom:Establishment_Names', 'Value': ''},
+            # {'Name': 'custom:Restuarent_Name', 'Value': restuarent_name},
             {'Name': 'email', 'Value':placeholder_email},
             {'Name': 'email_verified', 'Value': 'True'},               
             ]
@@ -109,7 +109,6 @@ class EmployeeRegistration(View):
             print(f"User signup failed =>> {e}")
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
             
-
 
 class UserLogin(View):
     
@@ -166,41 +165,51 @@ class UserLogin(View):
             print(f"Authentication failed: {e}")
             return JsonResponse({'success': False, 'message': str(e)})    
 
-@csrf_exempt
-def UserAuthentication(request):
-    try:
-        email = request.POST.get('email')
-        confirmation_code = request.POST.get('code')
+class UserAuthentication(View):
 
-        response = cognito_client.confirm_sign_up(
-            ClientId=client_id,
-            Username=email,
-            ConfirmationCode=confirmation_code
-        )
-        print("User signup confirmed.")
-
-        return JsonResponse({'success': True, 'data': response,'message':"User Authentication confirmed."})
-    except ClientError as e:
-        print("UserAuthentication error = ",e)
-        return JsonResponse({'success': False, 'message': str(e)})
-
-@csrf_exempt
-def ResendConfirmationCode(request):
-    try:
-        username_or_email = request.POST.get('username_or_email')
-
-        response = cognito_client.resend_confirmation_code(
-            ClientId=client_id,
-            Username=username_or_email
-        )
-
-        print("Confirmation code resent successfully.")
-
-        return JsonResponse({'success': True, 'data': response, 'message':'Confirmation code resent successfully.'})
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
     
-    except ClientError as e:
-        print(f"Error resending confirmation code: {e}")
-        return JsonResponse({'success': False, 'message': str(e)})
+    def post(self, request):
+        try:
+            email = request.POST.get('email')
+            confirmation_code = request.POST.get('code')
+
+            response = cognito_client.confirm_sign_up(
+                ClientId=client_id,
+                Username=email,
+                ConfirmationCode=confirmation_code
+            )
+
+
+            return JsonResponse({'success': True, 'data': response,'message':"User Authentication confirmed."})
+        except ClientError as e:
+            print("UserAuthentication error = ",e)
+            return JsonResponse({'success': False, 'message': str(e)})
+
+class ResendConfirmationCode(View):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(request):
+        try:
+            username_or_email = request.POST.get('username_or_email')
+
+            response = cognito_client.resend_confirmation_code(
+                ClientId=client_id,
+                Username=username_or_email
+            )
+
+            print("Confirmation code resent successfully.")
+
+            return JsonResponse({'success': True, 'data': response, 'message':'Confirmation code resent successfully.'})
+        
+        except ClientError as e:
+            print(f"Error resending confirmation code: {e}")
+            return JsonResponse({'success': False, 'message': str(e)})
 
   
    
