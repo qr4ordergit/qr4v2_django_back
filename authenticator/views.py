@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt,csrf_protect
-from allauth.account.views import LoginView, SignupView, LogoutView
+from django.views import View
+from django.utils.decorators import method_decorator
 from django.conf import settings
 import boto3
 from botocore.exceptions import ClientError
@@ -10,29 +11,32 @@ from getpass import getpass
 import datetime
 
 from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
-from jose import jwt
-import requests
+
 
 cognito_region = settings.AWS_REGION  
 client_id = settings.COGNITO_APP_CLIENT_ID  
 user_pool_id = settings.COGNITO_USER_POOL_ID 
 cognito_client = boto3.client('cognito-idp', region_name=cognito_region)
-# class CustomSignupView(SignupView):
-# @csrf_protect
 
 
-@csrf_exempt
-def UserRegistration(request):
+
+# @csrf_exempt
+
+class OwnerRegistration(View):
+
+    # @csrf_exempt
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
     
-    try:
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        establishment_name = request.POST.get('establishment_names')
+    def post(self,request):
+        try:
+            email = request.POST.get('email')
+            password = request.POST.get('password')
+            establishment_name = request.POST.get('establishment_names')
 
-        if email:
             user_attributes = [
             {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
-            # {'Name': 'custom:restuarent_name', 'Value': ''},
             {'Name': 'email', 'Value': email},
             ]
 
@@ -49,10 +53,23 @@ def UserRegistration(request):
                 GroupName = 'Owner',
                 )
             
-            return JsonResponse({'success': True, 'data': response, 'message':'User signup successful. Confirm signup with the code sent to your email.'})
-  
-        else:
+            if response['UserSub'] and add_owner_to_group['ResponseMetadata']['HTTPStatusCode'] == 200:
+                return JsonResponse({'success': True, 'data': response, 'message':'User signup successful. Confirm signup with the code sent to your email.'})
+            
+        except ClientError as e:
+            print(f"User signup failed =>> {e}")
+            return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
+    
+class EmployeeRegistration(View): 
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+    
+    def post(self, request):
+        try:
             restuarent_name = request.POST.get('restuarent_name')
+            password = request.POST.get('password')
             group_name = 'Staff'
             # group_name = request.POST.get('group_name')
             role = request.POST.get('role')
@@ -63,8 +80,7 @@ def UserRegistration(request):
             {'Name': 'custom:Establishment_Names', 'Value': ''},
             {'Name': 'custom:Restuarent_Name', 'Value': restuarent_name},
             {'Name': 'email', 'Value':placeholder_email},
-            {'Name': 'email_verified', 'Value': 'True'},
-            # {'Name': 'UserStatus', 'Value': 'Confirmed'},   
+            {'Name': 'email_verified', 'Value': 'True'},               
             ]
 
             response = cognito_client.admin_create_user(
@@ -74,22 +90,24 @@ def UserRegistration(request):
                 UserAttributes=user_attributes,
                 ForceAliasCreation=False,
             )
-
+            
+            user_response=response['ResponseMetadata']['HTTPStatusCode']
 
             add_user_to_group = cognito_client.admin_add_user_to_group(
                 UserPoolId=user_pool_id,
                 Username= role,
                 GroupName=group_name,
-                )
+                ) 
+            group_responce = add_user_to_group['ResponseMetadata']['HTTPStatusCode']
 
+            if group_responce == 200 and user_response == 200:
+                return JsonResponse({'success': True, 'data': response, "message":"User Createtion successful."})
             
-            return JsonResponse({'success': True, 'data': response, "message":"User Createtion successful."})
-          
-    except ClientError as e:
-        print(f"User signup failed =>> {e}")
-        message = {e}
-        return JsonResponse({'success': False})
-    
+        except ClientError as e:
+            print(f"User signup failed =>> {e}")
+            return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
+            
+
 @csrf_exempt
 def UserLogin(request):
     try:
@@ -135,7 +153,7 @@ def UserLogin(request):
              
     except ClientError as e:
         print(f"Authentication failed: {e}")
-        return JsonResponse({'success': False, 'message': 'Error during authentication.'})    
+        return JsonResponse({'success': False, 'message': str(e)})    
 
 @csrf_exempt
 def UserAuthentication(request):
@@ -153,7 +171,7 @@ def UserAuthentication(request):
         return JsonResponse({'success': True, 'data': response,'message':"User Authentication confirmed."})
     except ClientError as e:
         print("UserAuthentication error = ",e)
-        return JsonResponse({'success': False, })
+        return JsonResponse({'success': False, 'message': str(e)})
 
 @csrf_exempt
 def ResendConfirmationCode(request):
