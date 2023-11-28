@@ -147,7 +147,7 @@ class UserLogin(APIView):
 
             if 'AuthenticationResult' in response:
                 access_token = response['AuthenticationResult']['AccessToken']
-
+                refresh_token = response['AuthenticationResult']['RefreshToken']
                 # Verifing the access token using python-jose
                 public_keys = get_cognito_public_keys()
                 decoded_token = verify_cognito_access_token(access_token, public_keys)
@@ -155,7 +155,7 @@ class UserLogin(APIView):
                 if decoded_token:
                     # Access token is valid, perform additional actions
                     user_data = {'sub': decoded_token.get('sub')}  # Include additional user data as needed
-                    data= {'access_token': access_token, 'user_data': user_data}
+                    data= {'access_token': access_token, 'refresh_token':refresh_token,'user_data': user_data}
                     return JsonResponse({'success': True, 'data': data,'message': 'Authenticated User.'})
                 else:
                     return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
