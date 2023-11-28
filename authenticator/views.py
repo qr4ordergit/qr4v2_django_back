@@ -51,8 +51,8 @@ class OwnerRegistration(APIView):
                 GroupName = 'Owner',
                 )
 
-            if response['UserSub'] and add_owner_to_group['ResponseMetadata']['HTTPStatusCode'] == 200:
-                return JsonResponse({'success': True, 'data': response, 'message':'User signup successful. Confirm signup with the code sent to your email.'})
+            
+            return JsonResponse({'success': True, 'data': response, 'message':'User signup successful. Confirm signup with the code sent to your email.'})
             
         except ClientError as e:
             print(f"User signup failed =>> {e}")
