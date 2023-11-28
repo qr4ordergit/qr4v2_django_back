@@ -159,7 +159,10 @@ class UserLogin(APIView):
                     return JsonResponse({'success': True, 'data': data,'message': 'Authenticated User.'})
                 else:
                     return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
-                
+        except cognito_client.exceptions.UserNotConfirmedException:
+            return JsonResponse({'success': False, 'verified':False, 'message': 'User not Verified.'})
+        except cognito_client.exceptions.NotAuthorizedException:
+            return JsonResponse({'success': False, 'message': 'Incorrect username or password.'})
         except ClientError as e:
             print(f"Authentication failed: {e}")
             return JsonResponse({'success': False, 'message': str(e)})    
