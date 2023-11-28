@@ -1,11 +1,13 @@
 from django.urls import include, path
-from authenticator import views
+from .views import *
 
 urlpatterns = [
-    path('signup/', views.UserRegistration, name='UserRegistration'),
-    path('authentication/', views.UserAuthentication, name='UserAuthentication'),
-    path('resend/confirmation/code/', views.ResendConfirmationCode, name='ResendConfirmationCode'),
-    path('login/', views.UserLogin, name='UserLogin'),
-    path('account/recovery/', views.account_recovery, name='account_recovery'),
+    path('profile/creation/', OwnerRegistration.as_view(), name='owner-registration'),
+    path('employee/creation/', EmployeeRegistration.as_view(), name='employee-creation'),
+    
+    # path('authentication/', UserAuthentication.as_view(), name='UserAuthentication'),
+    # path('resend/confirmation/code/', ResendConfirmationCode.as_view(), name='ResendConfirmationCode'),
+    path('login/', UserLogin.as_view(), name='user-login'),
+    # path('account/recovery/', account_recovery.as_view(), name='account_recovery'),
     
 ]

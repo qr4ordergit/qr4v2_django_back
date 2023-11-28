@@ -1,3 +1,5 @@
+from typing import Any
+from django import http
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt,csrf_protect
@@ -108,52 +110,61 @@ class EmployeeRegistration(View):
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
             
 
-@csrf_exempt
-def UserLogin(request):
-    try:
-        username_or_email = request.POST.get('username_or_email')
-        password = request.POST.get('password')
 
-        response = cognito_client.initiate_auth(
-            ClientId=client_id,
-            AuthFlow='USER_PASSWORD_AUTH',
-            AuthParameters={
-                'USERNAME': username_or_email,
-                'PASSWORD': password
-            }
-        )
+class UserLogin(View):
+    
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+    
+    def post(self, request):
+        try:
+            username_or_email = request.POST.get('username_or_email')
+            password = request.POST.get('password')
 
-        if 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
-            # This code is essential for authenticating and validating users created by the owner.
-            session = response['Session']
-            staff_response = cognito_client.respond_to_auth_challenge(
-            ClientId=client_id,
-            ChallengeName='NEW_PASSWORD_REQUIRED',
-            ChallengeResponses={
-                'USERNAME': username_or_email,
-                'NEW_PASSWORD': password
-            },Session=session)
+            if '@'not in username_or_email:
+                password = f'Qr4oreder@{password}'
 
-            response = staff_response
+            response = cognito_client.initiate_auth(
+                ClientId=client_id,
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    'USERNAME': username_or_email,
+                    'PASSWORD': password 
+                }
+            )
 
-        if 'AuthenticationResult' in response:
-            access_token = response['AuthenticationResult']['AccessToken']
+            if 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
+                # This code is essential for authenticating and validating users created by the owner.
+                session = response['Session']
+                staff_response = cognito_client.respond_to_auth_challenge(
+                ClientId=client_id,
+                ChallengeName='NEW_PASSWORD_REQUIRED',
+                ChallengeResponses={
+                    'USERNAME': username_or_email,
+                    'NEW_PASSWORD': password
+                },Session=session)
 
-            # Verifing the access token using python-jose
-            public_keys = get_cognito_public_keys()
-            decoded_token = verify_cognito_access_token(access_token, public_keys)
+                response = staff_response
 
-            if decoded_token:
-                # Access token is valid, perform additional actions
-                user_data = {'sub': decoded_token.get('sub')}  # Include additional user data as needed
-                data= {'access_token': access_token, 'user_data': user_data}
-                return JsonResponse({'success': True, 'message': 'Authenticated User.'})
-            else:
-                return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
-             
-    except ClientError as e:
-        print(f"Authentication failed: {e}")
-        return JsonResponse({'success': False, 'message': str(e)})    
+            if 'AuthenticationResult' in response:
+                access_token = response['AuthenticationResult']['AccessToken']
+
+                # Verifing the access token using python-jose
+                public_keys = get_cognito_public_keys()
+                decoded_token = verify_cognito_access_token(access_token, public_keys)
+
+                if decoded_token:
+                    # Access token is valid, perform additional actions
+                    user_data = {'sub': decoded_token.get('sub')}  # Include additional user data as needed
+                    data= {'access_token': access_token, 'user_data': user_data}
+                    return JsonResponse({'success': True, 'message': 'Authenticated User.'})
+                else:
+                    return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
+                
+        except ClientError as e:
+            print(f"Authentication failed: {e}")
+            return JsonResponse({'success': False, 'message': str(e)})    
 
 @csrf_exempt
 def UserAuthentication(request):
