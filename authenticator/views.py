@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 from django.conf import settings
 import boto3
 from botocore.exceptions import ClientError
-
+from rest_framework.views import APIView
 from getpass import getpass
 import datetime
 
@@ -21,22 +21,18 @@ user_pool_id = settings.COGNITO_USER_POOL_ID
 cognito_client = boto3.client('cognito-idp', region_name=cognito_region)
 
 
+class OwnerRegistration(APIView):
 
-# @csrf_exempt
-
-class OwnerRegistration(View):
-
-    # @csrf_exempt
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
     
     def post(self,request):
-        try:
-            email = request.POST.get('email')
-            password = request.POST.get('password')
-            # establishment_name = request.POST.get('establishment_names')
 
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        try:
             user_attributes = [
             # {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
             {'Name': 'email', 'Value': email},
@@ -52,17 +48,20 @@ class OwnerRegistration(View):
             add_owner_to_group = cognito_client.admin_add_user_to_group(
                 UserPoolId = user_pool_id,
                 Username = email,
-                GroupName = 'Owner',
+                GroupName = 'Owners',
                 )
-            
+
             if response['UserSub'] and add_owner_to_group['ResponseMetadata']['HTTPStatusCode'] == 200:
                 return JsonResponse({'success': True, 'data': response, 'message':'User signup successful. Confirm signup with the code sent to your email.'})
             
         except ClientError as e:
             print(f"User signup failed =>> {e}")
+            delete_user = cognito_client.admin_delete_user(
+                            UserPoolId=user_pool_id,
+                            Username=email )
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
     
-class EmployeeRegistration(View): 
+class EmployeeRegistration(APIView): 
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
@@ -110,7 +109,7 @@ class EmployeeRegistration(View):
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
             
 
-class UserLogin(View):
+class UserLogin(APIView):
     
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
@@ -157,7 +156,7 @@ class UserLogin(View):
                     # Access token is valid, perform additional actions
                     user_data = {'sub': decoded_token.get('sub')}  # Include additional user data as needed
                     data= {'access_token': access_token, 'user_data': user_data}
-                    return JsonResponse({'success': True, 'message': 'Authenticated User.'})
+                    return JsonResponse({'success': True, 'data': data,'message': 'Authenticated User.'})
                 else:
                     return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
                 
@@ -165,7 +164,7 @@ class UserLogin(View):
             print(f"Authentication failed: {e}")
             return JsonResponse({'success': False, 'message': str(e)})    
 
-class UserAuthentication(View):
+class UserAuthentication(APIView):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
@@ -188,13 +187,13 @@ class UserAuthentication(View):
             print("UserAuthentication error = ",e)
             return JsonResponse({'success': False, 'message': str(e)})
 
-class ResendConfirmationCode(View):
+class ResendConfirmationCode(APIView):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(request):
+    def post(self, request):
         try:
             username_or_email = request.POST.get('username_or_email')
 
