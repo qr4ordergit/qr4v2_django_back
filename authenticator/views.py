@@ -53,7 +53,10 @@ class OwnerRegistration(APIView):
 
             
             return JsonResponse({'success': True, 'data': response, 'message':'User signup successful. Confirm signup with the code sent to your email.'})
-            
+        except cognito_client.exceptions.UsernameExistsException:
+            return JsonResponse({'success': False, 'message': 'Username Already Exists.'})
+        except cognito_client.exceptions.InvalidPasswordException:
+            return JsonResponse({'success': False,'message': 'Invalid Password.'})
         except ClientError as e:
             print(f"User signup failed =>> {e}")
             # delete_user = cognito_client.admin_delete_user(
