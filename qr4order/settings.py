@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 dotenv_path = os.path.join(BASE_DIR, ".env")
 load_dotenv(dotenv_path)
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = '3423nklnksnsd'
 
 DEBUG = True
 
@@ -21,13 +21,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'authenticator',
     'api',
     'corsheaders',
     'menu',
     'restaurant',
     'multistore',
-
+    'authenticator',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -118,6 +117,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
+
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -125,6 +126,9 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_L10N = True
+
+
+AUTH_USER_MODEL = "authenticator.CustomUser"
 
 
 USE_TZ = True

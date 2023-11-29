@@ -11,7 +11,11 @@ import boto3
 from botocore.exceptions import ClientError
 from rest_framework.views import APIView
 from getpass import getpass
+from rest_framework.response import Response
 import datetime
+from .utils import (
+    user_registration
+)
 
 from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
 
@@ -47,25 +51,29 @@ class OwnerRegistration(APIView):
             )
 
             add_owner_to_group = cognito_client.admin_add_user_to_group(
-                UserPoolId=user_pool_id,
-                Username=email,
-                GroupName='Owner',
-            )
-
+                UserPoolId = user_pool_id,
+                Username = email,
+                GroupName = 'Owner',
+                )
+            
+            try:
+                user_registration(email,password)
+            except Exception as e:
+                print("Failed to Regis")
+           
             return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': response, 'message': 'User signup successful. Confirm signup with the code sent to your email.'})
         except cognito_client.exceptions.UsernameExistsException:
-            return JsonResponse({'success': False, 'message': 'Username Already Exists.'})
+            return Response({'success': False, 'message': 'Username Already Exists.'})
         except cognito_client.exceptions.InvalidPasswordException:
-            return JsonResponse({'success': False, 'message': 'Invalid Password.'})
+            return JsonResponse({'success': False,'message': 'Invalid Password.'})
         except ClientError as e:
             print(f"User signup failed =>> {e}")
             # delete_user = cognito_client.admin_delete_user(
             #                 UserPoolId=user_pool_id,
             #                 Username=email )
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
-
-
-class EmployeeRegistration(APIView):
+    
+class EmployeeRegistration(APIView): 
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):

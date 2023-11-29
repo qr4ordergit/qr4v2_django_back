@@ -10,8 +10,6 @@ class Registrations(APIView):
     serializer_class = RegistrationSerializer
 
     def get(self,request):
-        print(request.body)
-
         return Response({"message":"get api"},status=status.HTTP_200_OK)
 
     def post(self,request):
