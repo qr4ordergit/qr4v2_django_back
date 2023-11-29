@@ -3,6 +3,7 @@ from string import digits,hexdigits,ascii_uppercase
 from random import choices
 import uuid
 import time
+from authenticator.models import CustomUser
 
 # class Country(models.Model):
 #     NAME = models.CharField(max_length=250, null=False, blank=False)
@@ -36,6 +37,7 @@ class BusinessEntity(CommonFields):
     name = models.CharField(max_length=255)
     description = models.TextField(default='',null=True,blank=True)
     status = models.BooleanField(default=False)
+    owner = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="owner",null=True)
     # timezone = models.ForeignKey(Timezone, on_delete=models.CASCADE, related_name='restaurant_timezone', null=True)
     # country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='restaurant_country',default='',null=True,blank=True)
     # currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='restaurant_currency',default='1',null=True, blank=True)
@@ -54,7 +56,6 @@ class QrSingature(CommonFields):
     
     def __str__(self) -> str:
         return self.table_name
-
 
 def create_session_pin():
     timestamp = str(time.time()).encode('utf-8')
@@ -79,7 +80,6 @@ class OrderSession(CommonFields):
     is_session_active = models.BooleanField(default=True)
     amount = models.FloatField(default=None, null=True, blank=True)
     total_tip = models.FloatField(default=0)
-
 
 
 #order_summary
