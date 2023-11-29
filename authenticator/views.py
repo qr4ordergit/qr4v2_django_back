@@ -17,51 +17,190 @@ from .utils import (
     user_registration
 )
 
+from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
 
-from jose import jwt
 
-
-cognito_region = settings.AWS_REGION  
-client_id = settings.COGNITO_APP_CLIENT_ID  
-user_pool_id = settings.COGNITO_USER_POOL_ID 
+cognito_region = settings.AWS_REGION
+client_id = settings.COGNITO_APP_CLIENT_ID
+user_pool_id = settings.COGNITO_USER_POOL_ID
 cognito_client = boto3.client('cognito-idp', region_name=cognito_region)
-# class CustomSignupView(SignupView):
-# @csrf_protect
 
 
-@csrf_exempt
-def UserRegistration(request):
-    
-    try:
+class OwnerRegistration(APIView):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, request):
+
         email = request.POST.get('email')
         password = request.POST.get('password')
-        establishment_name = request.POST.get('establishment_name')
 
-        user_attributes = [
-        {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
-        ]
+        try:
+            user_attributes = [
+                # {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
+                {'Name': 'email', 'Value': email},
+            ]
 
-        response = cognito_client.sign_up(
-            ClientId=client_id,
-            Username=email,
-            Password=password,
-            UserAttributes=user_attributes
-        )
+            response = cognito_client.sign_up(
+                ClientId=client_id,
+                Username=email,
+                Password=password,
+                UserAttributes=user_attributes
+            )
 
-        print("User signup successful. Confirm signup with the code sent to your email.")
-        
-        return JsonResponse({'success': True, 'data': response})
+            add_owner_to_group = cognito_client.admin_add_user_to_group(
+                UserPoolId = user_pool_id,
+                Username = email,
+                GroupName = 'Owner',
+                )
+            
+            try:
+                user_registration(email,password)
+            except Exception as e:
+                print("Failed to Regis")
+           
+            return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': response, 'message': 'User signup successful. Confirm signup with the code sent to your email.'})
+        except cognito_client.exceptions.UsernameExistsException:
+            return Response({'success': False, 'message': 'Username Already Exists.'})
+        except cognito_client.exceptions.InvalidPasswordException:
+            return JsonResponse({'success': False,'message': 'Invalid Password.'})
+        except ClientError as e:
+            print(f"User signup failed =>> {e}")
+            # delete_user = cognito_client.admin_delete_user(
+            #                 UserPoolId=user_pool_id,
+            #                 Username=email )
+            return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
     
-    except botocore.exceptions.ClientError as e:
-        print(f"User signup failed =>> {e}")
-        message = {e}
-        return JsonResponse({'success': False})
+class EmployeeRegistration(APIView): 
 
-@csrf_exempt
-def UserAuthentication(request):
-    try:
-        email = request.POST.get('email')
-        confirmation_code = request.POST.get('code')
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, request):
+        try:
+            role = request.POST.get('role')
+            password = request.POST.get('password')
+            group_name = 'Staff'
+            placeholder_email = f'{role}@example.com'
+
+            password = f'Qr4oreder@{password}'
+            user_attributes = [
+                {'Name': 'email', 'Value': placeholder_email},
+                {'Name': 'email_verified', 'Value': 'True'},
+            ]
+
+            response = cognito_client.admin_create_user(
+                UserPoolId=user_pool_id,
+                Username=role,
+                TemporaryPassword=password,
+                UserAttributes=user_attributes,
+                ForceAliasCreation=False,
+            )
+
+            user_response = response['ResponseMetadata']['HTTPStatusCode']
+
+            add_user_to_group = cognito_client.admin_add_user_to_group(
+                UserPoolId=user_pool_id,
+                Username=role,
+                GroupName=group_name,
+            )
+            group_responce = add_user_to_group['ResponseMetadata']['HTTPStatusCode']
+
+            if group_responce == 200 and user_response == 200:
+                return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': response, "message": "User Createtion successful."})
+
+        except cognito_client.exceptions.UsernameExistsException:
+            return JsonResponse({'success': False, 'message': 'Username Already Exists.'})
+        except cognito_client.exceptions.InvalidPasswordException:
+            return JsonResponse({'success': False, 'message': 'Invalid Password.'})
+        except ClientError as e:
+            print(f"User signup failed =>> {e}")
+            return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
+
+
+class UserLogin(APIView):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, request):
+        try:
+            username_or_email = request.POST.get('username_or_email')
+            password = request.POST.get('password')
+
+            if '@'not in username_or_email:
+                password = f'Qr4oreder@{password}'
+            
+
+            response = cognito_client.initiate_auth(
+                ClientId=client_id,
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    'USERNAME': username_or_email,
+                    'PASSWORD': password
+                }
+            )
+
+            if 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
+                # This code is essential for authenticating and validating users created by the owner.
+                session = response['Session']
+                staff_response = cognito_client.respond_to_auth_challenge(
+                    ClientId=client_id,
+                    ChallengeName='NEW_PASSWORD_REQUIRED',
+                    ChallengeResponses={
+                        'USERNAME': username_or_email,
+                        'NEW_PASSWORD': password
+                    }, Session=session)
+
+                response = staff_response
+
+            if 'AuthenticationResult' in response:
+                access_token = response['AuthenticationResult']['AccessToken']
+                refresh_token = response['AuthenticationResult']['RefreshToken']
+                # Verifing the access token using python-jose
+                public_keys = get_cognito_public_keys()
+                decoded_token = verify_cognito_access_token(
+                    access_token, public_keys)
+
+                if decoded_token:
+                    # Access token is valid, perform additional actions
+                    # Include additional user data as needed
+                    if  username_or_email == 'test': 
+                        user_type = 'Manager' 
+                    elif username_or_email == 'test2':
+                        user_type = 'Waiter'
+
+                    user_data = {'sub': decoded_token.get('sub'), 
+                                 'user_type': user_type}
+                    
+                    data = {'access_token': access_token,
+                            'refresh_token': refresh_token, 'user_data': user_data}
+                    return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
+                else:
+                    return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
+        except cognito_client.exceptions.UserNotConfirmedException:
+            return JsonResponse({'success': False, 'verified': False, 'message': 'User not Verified.'})
+        except cognito_client.exceptions.NotAuthorizedException:
+            return JsonResponse({'success': False, 'message': 'Incorrect username or password.'})
+        except ClientError as e:
+            print(f"Authentication failed: {e}")
+            return JsonResponse({'success': False, 'message': str(e)})
+
+
+class UserAuthentication(APIView):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, request):
+        try:
+            email = request.POST.get('email')
+            confirmation_code = request.POST.get('code')
 
             response = cognito_client.confirm_sign_up(
                 ClientId=client_id,
