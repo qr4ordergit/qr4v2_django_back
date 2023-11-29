@@ -26,14 +26,15 @@ INSTALLED_APPS = [
     'corsheaders',
     'menu',
     'restaurant',
+    'multistore',
 
-     # ...
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.amazon',
-    # ...
 ]
+
+
 
 
 # Cognito User Pool Configuration

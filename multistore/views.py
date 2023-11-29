@@ -3,12 +3,13 @@ from rest_framework.views import APIView
 from django.utils import translation
 from django.utils.translation import gettext as _
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.http import  JsonResponse
 from rest_framework import status as http_status
 import polib
 
-class LanguageDetails(APIView):
 
+class LanguageDetails(APIView):
+    
     def checkLang(self,lang):
         if lang in[code for code, _ in settings.LANGUAGES]:
             return True
@@ -86,7 +87,6 @@ class LanguageCrud(APIView):
                 po_obj=po_file.find(msgid)
                 if po_obj:
                     po_obj.obsolete=False
-
                     
             po_file.save()
             po_file.save_as_mofile(f"D:/qr4order_new/qr4v2_django_back/locale/{lang}/LC_MESSAGES/django.mo")

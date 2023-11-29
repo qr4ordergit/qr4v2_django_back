@@ -30,7 +30,6 @@ def generate_code():
         return generate_code
     return code
 
-
 class BusinessEntity(CommonFields):
     id = models.BigAutoField(primary_key = True)
     referance = models.CharField(max_length=300,default=generate_code)
