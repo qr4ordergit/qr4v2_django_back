@@ -132,56 +132,61 @@ class UserLogin(APIView):
             username_or_email = request.POST.get('username_or_email')
             password = request.POST.get('password')
 
-            if '@'not in username_or_email:
-                password = f'Qr4oreder@{password}'
-            
+            if username_or_email and password:
 
-            response = cognito_client.initiate_auth(
-                ClientId=client_id,
-                AuthFlow='USER_PASSWORD_AUTH',
-                AuthParameters={
-                    'USERNAME': username_or_email,
-                    'PASSWORD': password
-                }
-            )
+                if '@'not in username_or_email:
+                    password = f'Qr4oreder@{password}'
+                
 
-            if 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
-                # This code is essential for authenticating and validating users created by the owner.
-                session = response['Session']
-                staff_response = cognito_client.respond_to_auth_challenge(
+                response = cognito_client.initiate_auth(
                     ClientId=client_id,
-                    ChallengeName='NEW_PASSWORD_REQUIRED',
-                    ChallengeResponses={
+                    AuthFlow='USER_PASSWORD_AUTH',
+                    AuthParameters={
                         'USERNAME': username_or_email,
-                        'NEW_PASSWORD': password
-                    }, Session=session)
+                        'PASSWORD': password
+                    }
+                )
 
-                response = staff_response
+                if 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
+                    # This code is essential for authenticating and validating users created by the owner.
+                    session = response['Session']
+                    staff_response = cognito_client.respond_to_auth_challenge(
+                        ClientId=client_id,
+                        ChallengeName='NEW_PASSWORD_REQUIRED',
+                        ChallengeResponses={
+                            'USERNAME': username_or_email,
+                            'NEW_PASSWORD': password
+                        }, Session=session)
 
-            if 'AuthenticationResult' in response:
-                access_token = response['AuthenticationResult']['AccessToken']
-                refresh_token = response['AuthenticationResult']['RefreshToken']
-                # Verifing the access token using python-jose
-                public_keys = get_cognito_public_keys()
-                decoded_token = verify_cognito_access_token(
-                    access_token, public_keys)
+                    response = staff_response
 
-                if decoded_token:
-                    # Access token is valid, perform additional actions
-                    # Include additional user data as needed
-                    if  username_or_email == 'test': 
-                        user_type = 'Manager' 
-                    elif username_or_email == 'test2':
-                        user_type = 'Waiter'
+                if 'AuthenticationResult' in response:
+                    access_token = response['AuthenticationResult']['AccessToken']
+                    refresh_token = response['AuthenticationResult']['RefreshToken']
+                    # Verifing the access token using python-jose
+                    public_keys = get_cognito_public_keys()
+                    decoded_token = verify_cognito_access_token(
+                        access_token, public_keys)
 
-                    user_data = {'sub': decoded_token.get('sub'), 
-                                 'user_type': user_type}
-                    
-                    data = {'access_token': access_token,
-                            'refresh_token': refresh_token, 'user_data': user_data}
-                    return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
-                else:
-                    return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
+                    if decoded_token:
+                        # Access token is valid, perform additional actions
+                        # Include additional user data as needed
+                        if  username_or_email == 'test': 
+                            user_type = 'Manager' 
+                        elif username_or_email == 'test2':
+                            user_type = 'Waiter'
+
+                        user_data = {'sub': decoded_token.get('sub'), 
+                                    'user_type': user_type}
+                        
+                        data = {'access_token': access_token,
+                                'refresh_token': refresh_token, 'user_data': user_data}
+                        return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
+                    else:
+                        return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
+            
+            return JsonResponse({'success': False, 'message': 'Incorrect username or password.'})    
+        
         except cognito_client.exceptions.UserNotConfirmedException:
             return JsonResponse({'success': False, 'verified': False, 'message': 'User not Verified.'})
         except cognito_client.exceptions.NotAuthorizedException:
@@ -209,6 +214,8 @@ class UserAuthentication(APIView):
             )
 
             return JsonResponse({'success': True, 'data': response, 'message': "User Authentication confirmed."})
+        except cognito_client.exceptions.ExpiredCodeException:
+            return JsonResponse({'success': False, 'message': 'Invalid code provided, please request a code again.'})
         except ClientError as e:
             print("UserAuthentication error = ", e)
             return JsonResponse({'success': False, 'message': str(e)})
