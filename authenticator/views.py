@@ -72,17 +72,13 @@ class EmployeeRegistration(APIView):
     
     def post(self, request):
         try:
-            restuarent_name = request.POST.get('restuarent_name')
+            role = request.POST.get('role')
             password = request.POST.get('password')
             group_name = 'Staff'
-            # group_name = request.POST.get('group_name')
-            role = request.POST.get('role')
             placeholder_email = f'{role}@example.com'
     
             password = f'Qr4oreder@{password}'
             user_attributes = [
-            # {'Name': 'custom:Establishment_Names', 'Value': ''},
-            # {'Name': 'custom:Restuarent_Name', 'Value': restuarent_name},
             {'Name': 'email', 'Value':placeholder_email},
             {'Name': 'email_verified', 'Value': 'True'},               
             ]
@@ -106,7 +102,11 @@ class EmployeeRegistration(APIView):
 
             if group_responce == 200 and user_response == 200:
                 return JsonResponse({'success': True, 'data': response, "message":"User Createtion successful."})
-            
+        
+        except cognito_client.exceptions.UsernameExistsException:
+            return JsonResponse({'success': False, 'message': 'Username Already Exists.'})
+        except cognito_client.exceptions.InvalidPasswordException:
+            return JsonResponse({'success': False,'message': 'Invalid Password.'})
         except ClientError as e:
             print(f"User signup failed =>> {e}")
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
@@ -216,37 +216,38 @@ class ResendConfirmationCode(APIView):
             print(f"Error resending confirmation code: {e}")
             return JsonResponse({'success': False, 'message': str(e)})
 
-  
-   
-    
-    
-@csrf_exempt    
-def account_recovery(request):
-    try:
-        email = request.POST.get('email')
 
-        response = cognito_client.forgot_password(
-            ClientId=client_id,
-            Username=email,
-        )
+class account_recovery(APIView):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
-        return JsonResponse({'success': True, 'message': 'Password recovery initiated successfully. Check your email for instructions."'})
-    
-    except cognito_client.exceptions.UserNotFoundException:
-        print("User not found. Please check the username and try again.")
-        return JsonResponse({'success': True,'message':"User not found. Please check the username and try again."})
-    
-    except cognito_client.exceptions.NotAuthorizedException:
-        print("User is not authorized to initiate password recovery. Please contact support.")
-        return JsonResponse({'success': True, 'data': response,'message':"User is not authorized to initiate password recovery. Please contact support."})
-    
-    except cognito_client.exceptions.LimitExceededException:
-        print("Request limit exceeded. Please try again later.")
-        return JsonResponse({'success': True, 'data': response,'message':"Request limit exceeded. Please try again later."})
-    
-    except Exception as e:
-        print(f"An error occurred: {e}")  
-        return JsonResponse({'success': True, 'data': response,'message':[e]})
+    def account_recovery(self, request):
+        try:
+            email = request.POST.get('email')
+
+            response = cognito_client.forgot_password(
+                ClientId=client_id,
+                Username=email,
+            )
+
+            return JsonResponse({'success': True, 'message': 'Password recovery initiated successfully. Check your email for instructions."'})
+        
+        except cognito_client.exceptions.UserNotFoundException:
+            print("User not found. Please check the username and try again.")
+            return JsonResponse({'success': True,'message':"User not found. Please check the username and try again."})
+        
+        except cognito_client.exceptions.NotAuthorizedException:
+            print("User is not authorized to initiate password recovery. Please contact support.")
+            return JsonResponse({'success': True, 'data': response,'message':"User is not authorized to initiate password recovery. Please contact support."})
+        
+        except cognito_client.exceptions.LimitExceededException:
+            print("Request limit exceeded. Please try again later.")
+            return JsonResponse({'success': True, 'data': response,'message':"Request limit exceeded. Please try again later."})
+        
+        except Exception as e:
+            print(f"An error occurred: {e}")  
+            return JsonResponse({'success': True, 'data': response,'message':[e]})
     
 
 
