@@ -134,8 +134,7 @@ class UserLogin(APIView):
 
             if '@'not in username_or_email:
                 password = f'Qr4oreder@{password}'
-            else:
-                return JsonResponse({'success': False, 'Error': 'Invalid username or password. Please check your input and try again.'})
+            
 
             response = cognito_client.initiate_auth(
                 ClientId=client_id,
