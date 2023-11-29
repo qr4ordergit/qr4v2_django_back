@@ -222,7 +222,7 @@ class account_recovery(APIView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def account_recovery(self, request):
+    def post(self, request):
         try:
             email = request.POST.get('email')
 
