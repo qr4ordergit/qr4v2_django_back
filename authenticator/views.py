@@ -177,6 +177,8 @@ class UserLogin(APIView):
                             user_type = 'Manager' 
                         elif username_or_email == 'test2':
                             user_type = 'Waiter'
+                        else:
+                            user_type = 'Owner'
 
                         user_data = {'sub': decoded_token.get('sub'), 
                                     'user_type': user_type}
@@ -241,7 +243,9 @@ class ResendConfirmationCode(APIView):
             print("Confirmation code resent successfully.")
 
             return JsonResponse({'success': True, 'data': response, 'message': 'Confirmation code resent successfully.'})
-
+        
+        except cognito_client.exceptions.UserNotFoundException:
+            return JsonResponse({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
         except ClientError as e:
             print(f"Error resending confirmation code: {e}")
             return JsonResponse({'success': False, 'message': str(e)})
@@ -298,13 +302,13 @@ class UserDetailsUpdate(APIView):
                 print("response-=-=-=", response)
                 return JsonResponse({'success': True, 'message': "User Details Updated Successfully."})
             
-            return JsonResponse({'success': False, 'message': "Request Failed. Please try again later."})
+            return JsonResponse({'success': False, 'status_code': status.HTTP_400_BAD_REQUEST ,'message': "Request Failed. Please try again later."})
         except cognito_client.exceptions.InvalidParameterException:
             return JsonResponse({'success': False, 'message': f"Invalid Parameter, Please try again."})
         except cognito_client.exceptions.UserNotFoundException:
-            return JsonResponse({'success': False, 'message': f"User Not Found, Please try again."})
-        except cognito_client.exceptions.LimitExceededException:
-            return JsonResponse({'success': False, 'message': f"Internal Server Error, Please try again."})
+            return JsonResponse({'success': False, 'status_code': status.HTTP_404_NOT_FOUND,'message': f"User Not Found, Please try again."})
+        # except cognito_client.exceptions.LimitExceededException:
+        #     return JsonResponse({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': f"Internal Server Error, Please try again."})
         except Exception as e:
             print(f"An error occurred: {e}")
             return JsonResponse({'success': False, 'message': str(e)})
