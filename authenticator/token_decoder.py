@@ -5,7 +5,6 @@ from django.conf import settings
 cognito_region = settings.AWS_REGION 
 user_pool_id = settings.COGNITO_USER_POOL_ID 
 
-
 def get_cognito_public_keys():
     # Retrieve Cognito public keys
     # jwks_url = 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Ggw6POqGJ/.well-known/jwks.json'
