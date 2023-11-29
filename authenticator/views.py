@@ -170,7 +170,14 @@ class UserLogin(APIView):
                 if decoded_token:
                     # Access token is valid, perform additional actions
                     # Include additional user data as needed
-                    user_data = {'sub': decoded_token.get('sub')}
+                    if  username_or_email == 'test': 
+                        user_type = 'Manager' 
+                    elif username_or_email == 'test2':
+                        user_type = 'Waiter'
+
+                    user_data = {'sub': decoded_token.get('sub'), 
+                                 'user_type': user_type}
+                    
                     data = {'access_token': access_token,
                             'refresh_token': refresh_token, 'user_data': user_data}
                     return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
@@ -264,3 +271,21 @@ class account_recovery(APIView):
         except Exception as e:
             print(f"An error occurred: {e}")
             return JsonResponse({'success': False, 'data': response, 'message': [e]})
+
+class UserDetailsUpdate(APIView):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+    
+    def post(self, request):
+
+        responce = cognito_client.admin_update_user_attributes(
+                UserPoolId=user_pool_id,
+                Username='string',
+                UserAttributes=[
+                            {
+                                'Name': 'string',
+                                'Value': 'string'
+                            },
+                        ],
+        )
