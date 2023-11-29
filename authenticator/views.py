@@ -16,6 +16,7 @@ import datetime
 from .utils import (
     user_registration
 )
+from .models import UserLevel
 
 from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
 
@@ -57,7 +58,8 @@ class OwnerRegistration(APIView):
                 )
             
             try:
-                user_registration(email,password)
+                ower = UserLevel.objects.get(name="OWNER")
+                user_registration(email,password,ower)
             except Exception as e:
                 print("Failed to Regis")
            
