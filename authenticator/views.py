@@ -264,18 +264,11 @@ class account_recovery(APIView):
             return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'message': 'Password recovery initiated successfully. Check your email for instructions."'})
 
         except cognito_client.exceptions.UserNotFoundException:
-            print("User not found. Please check the username and try again.")
-            return JsonResponse({'success': False, 'message': "User not found. Please check the username and try again."})
-
+            return JsonResponse({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
         except cognito_client.exceptions.NotAuthorizedException:
-            print(
-                "User is not authorized to initiate password recovery. Please contact support.")
-            return JsonResponse({'success': False, 'data': response, 'message': "User is not authorized to initiate password recovery. Please contact support."})
-
+            return JsonResponse({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
         except cognito_client.exceptions.LimitExceededException:
-            print("Request limit exceeded. Please try again later.")
-            return JsonResponse({'success': False, 'data': response, 'message': "Request limit exceeded. Please try again later."})
-
+            return JsonResponse({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': "Request limit exceeded. Please try again later."})
         except Exception as e:
             print(f"An error occurred: {e}")
             return JsonResponse({'success': False, 'data': response, 'message': [e]})
@@ -286,14 +279,32 @@ class UserDetailsUpdate(APIView):
         return super().dispatch(*args, **kwargs)
     
     def post(self, request):
+        try:
+            current_username = request.POST.get('current_username')
+            new_username = request.POST.get('new_username')
 
-        responce = cognito_client.admin_update_user_attributes(
-                UserPoolId=user_pool_id,
-                Username='string',
-                UserAttributes=[
-                            {
-                                'Name': 'string',
-                                'Value': 'string'
-                            },
-                        ],
-        )
+            if current_username and new_username:
+                user_attributes = [
+                    {'Name': 'email', 'Value': f'{new_username}@example.com'},
+                    {'Name': 'preferred_username', 'Value': new_username},
+                ]
+
+                response = cognito_client.admin_update_user_attributes(
+                    UserPoolId=user_pool_id,
+                    Username=current_username,
+                    UserAttributes=user_attributes
+                )
+
+                print("response-=-=-=", response)
+                return JsonResponse({'success': True, 'message': "User Details Updated Successfully."})
+            
+            return JsonResponse({'success': False, 'message': "Request Failed. Please try again later."})
+        except cognito_client.exceptions.InvalidParameterException:
+            return JsonResponse({'success': False, 'message': f"Invalid Parameter, Please try again."})
+        except cognito_client.exceptions.UserNotFoundException:
+            return JsonResponse({'success': False, 'message': f"User Not Found, Please try again."})
+        except cognito_client.exceptions.LimitExceededException:
+            return JsonResponse({'success': False, 'message': f"Internal Server Error, Please try again."})
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return JsonResponse({'success': False, 'message': str(e)})
