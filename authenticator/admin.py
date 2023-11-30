@@ -4,12 +4,12 @@ from .models import (
      GroupPermission
 )
 from django.contrib.auth.models import Group
-
 admin.site.unregister(Group)
+
+# Register your models here.
 
 class BaseReadOnlyAdminMixin:
     def has_add_permission(self, request):
-        print(request.user.is_superuser,"user id")
         if request.user.is_superuser:
             return True
         else:
@@ -25,7 +25,6 @@ class BaseReadOnlyAdminMixin:
             return False
 
 
-# Register your models here.
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = ['email','is_verify','identity']

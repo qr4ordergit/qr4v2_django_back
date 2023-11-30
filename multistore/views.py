@@ -9,13 +9,15 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
 from . serializers import ( 
-BusinessEntityRegistrationSerializer,
-QrSingatureSerializer
+    BusinessEntityRegistrationSerializer,
+    QrSingatureSerializer
 )
+from rest_framework.authentication import  BasicAuthentication
 import json
+from rest_framework.permissions import IsAuthenticated
+from multistore.custom_authetication import CustomAuthentication
 
 class LanguageDetails(APIView):
-    
     def checkLang(self,lang):
         if lang in[code for code, _ in settings.LANGUAGES]:
             return True
@@ -103,6 +105,8 @@ class LanguageCrud(APIView):
 
 
 class BusinessEntityRegistrations(APIView):
+    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [CustomAuthentication]
     serializer_class = BusinessEntityRegistrationSerializer
 
     def get(self,request):
