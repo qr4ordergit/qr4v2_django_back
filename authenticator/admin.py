@@ -1,8 +1,11 @@
 from django.contrib import admin
+
 from .models import (
      CustomUser,StaffPermissions,Operation,UserLevel,Permission,
      GroupPermission
 )
+from django.contrib.auth.models import Group
+# from django
 
 class BaseReadOnlyAdminMixin:
     def has_add_permission(self, request):
@@ -16,14 +19,18 @@ class BaseReadOnlyAdminMixin:
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        if request.user.is_superuser:
+            return True
+        else:
+            return False
+
+admin.site.unregister(Group)
 
 # Register your models here.
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = ['email','is_verify','identity']
     readonly_fields = ('is_verify','identity')
-
 
 @admin.register(StaffPermissions)
 class StaffPermissionsAdmin(admin.ModelAdmin):

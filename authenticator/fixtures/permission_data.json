@@ -1,0 +1,24 @@
+[
+    {
+        "model":"authenticator.Permission",
+        "pk":1,
+        "fields":{
+            "name":"MANAGER"
+        }
+    },
+    {
+        "model":"authenticator.Permission",
+        "pk":2,
+        "fields":{
+            "name":"WAITER"
+        }
+    },
+    {
+        "model":"authenticator.Permission",
+        "pk":3,
+        "fields":{
+            "name":"CASHIER"
+        }
+    }
+
+]

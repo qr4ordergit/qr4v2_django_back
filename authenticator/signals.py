@@ -15,7 +15,7 @@ def create_premission(sender, instance, created, **kwargs):
             Permission(name=f'{permission_name}_DELETE'),
             ]
         )
-        #delete previous on
+        #delete previous one
         try:
             Permission.objects.get(id=instance.id).delete()
         except:

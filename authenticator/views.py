@@ -29,10 +29,6 @@ cognito_client = boto3.client('cognito-idp', region_name=cognito_region)
 
 class OwnerRegistration(APIView):
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
     def post(self, request):
 
         email = request.POST.get('email')
@@ -58,10 +54,11 @@ class OwnerRegistration(APIView):
                 )
             
             try:
-                ower = UserLevel.objects.get(name="OWNER")
-                user_registration(email,password,ower)
+                owner, created = UserLevel.objects.get_or_create(name='OWNER')
+                print(owner,"user level saved")
+                user_registration(email,password,owner)
             except Exception as e:
-                print("Failed to Regis")
+                print("Failed to Registerations in Django User Model")
            
             return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': response, 'message': 'User signup successful. Confirm signup with the code sent to your email.'})
         except cognito_client.exceptions.UsernameExistsException:
@@ -77,18 +74,29 @@ class OwnerRegistration(APIView):
     
 class EmployeeRegistration(APIView): 
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+    def check_user_level_exits(self,role):
+        try:
+            user_level = UserLevel.objects.get(name=role)
+            return user_level
+        except:
+            return False
 
     def post(self, request):
         try:
+            user_name = request.POST.get('username')
             role = request.POST.get('role')
             password = request.POST.get('password')
             group_name = 'Staff'
-            placeholder_email = f'{role}@example.com'
-
+            placeholder_email = f'{user_name}@example.com'
             password = f'Qr4oreder@{password}'
+            
+
+            user_level_check = self.check_user_level_exits(role)
+            if user_level_check == False:
+                return Response({
+                    "message":"given role not exits"
+                })
+            
             user_attributes = [
                 {'Name': 'email', 'Value': placeholder_email},
                 {'Name': 'email_verified', 'Value': 'True'},
@@ -96,7 +104,7 @@ class EmployeeRegistration(APIView):
 
             response = cognito_client.admin_create_user(
                 UserPoolId=user_pool_id,
-                Username=role,
+                Username=user_name,
                 TemporaryPassword=password,
                 UserAttributes=user_attributes,
                 ForceAliasCreation=False,
@@ -110,17 +118,17 @@ class EmployeeRegistration(APIView):
                 GroupName=group_name,
             )
             group_responce = add_user_to_group['ResponseMetadata']['HTTPStatusCode']
-
             if group_responce == 200 and user_response == 200:
-                return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': response, "message": "User Createtion successful."})
+                user_registration(placeholder_email,password,user_level_check)
+                return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': response, "message": "User Createtion successful."})
 
         except cognito_client.exceptions.UsernameExistsException:
-            return JsonResponse({'success': False, 'message': 'Username Already Exists.'})
+            return Response({'success': False, 'message': 'Username Already Exists.'})
         except cognito_client.exceptions.InvalidPasswordException:
-            return JsonResponse({'success': False, 'message': 'Invalid Password.'})
+            return Response({'success': False, 'message': 'Invalid Password.'})
         except ClientError as e:
             print(f"User signup failed =>> {e}")
-            return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
+            return Response({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
 
 
 class UserLogin(APIView):
