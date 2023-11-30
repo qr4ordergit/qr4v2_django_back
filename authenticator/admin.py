@@ -1,11 +1,11 @@
 from django.contrib import admin
-
 from .models import (
      CustomUser,StaffPermissions,Operation,UserLevel,Permission,
      GroupPermission
 )
 from django.contrib.auth.models import Group
-# from django
+
+admin.site.unregister(Group)
 
 class BaseReadOnlyAdminMixin:
     def has_add_permission(self, request):
@@ -24,7 +24,6 @@ class BaseReadOnlyAdminMixin:
         else:
             return False
 
-admin.site.unregister(Group)
 
 # Register your models here.
 @admin.register(CustomUser)

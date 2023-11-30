@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'menu',
     'multistore',
     'authenticator',
+    
     'allauth',
     'allauth.account',
     'allauth.socialaccount',

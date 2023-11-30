@@ -1,7 +1,4 @@
-from typing import Any
-from django import http
 from rest_framework import status
-from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views import View
@@ -17,6 +14,7 @@ from .utils import (
     user_registration
 )
 from .models import UserLevel
+from multistore.models import BusinessEntity
 
 from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
 
@@ -80,16 +78,30 @@ class EmployeeRegistration(APIView):
             return user_level
         except:
             return False
+        
+    def businessentity_data(self,id:int):
+        try:
+            object = BusinessEntity.objects.get(id=id)
+            return object
+        except:
+            return None
+    
 
     def post(self, request):
         try:
             user_name = request.POST.get('username')
             role = request.POST.get('role')
             password = request.POST.get('password')
+            businessentity = request.POST.get('businessentity')
             group_name = 'Staff'
             placeholder_email = f'{user_name}@example.com'
             password = f'Qr4oreder@{password}'
-            
+
+            check_business = self.businessentity_data(businessentity)
+            if check_business == None:
+                return Response({
+                    "message":"businessentity not exits"
+                })
 
             user_level_check = self.check_user_level_exits(role)
             if user_level_check == False:
@@ -117,9 +129,13 @@ class EmployeeRegistration(APIView):
                 Username=role,
                 GroupName=group_name,
             )
+
             group_responce = add_user_to_group['ResponseMetadata']['HTTPStatusCode']
+
             if group_responce == 200 and user_response == 200:
+                
                 user_registration(placeholder_email,password,user_level_check)
+
                 return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': response, "message": "User Createtion successful."})
 
         except cognito_client.exceptions.UsernameExistsException:

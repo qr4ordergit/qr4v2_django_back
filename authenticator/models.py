@@ -9,16 +9,14 @@ class UserLevel(models.Model):
     def __str__(self) -> str:
         return self.name
 
-
 class CustomUser(AbstractUser):
     email = models.CharField(max_length=100)
     is_verify = models.BooleanField(default=False)
     identity = models.ForeignKey(UserLevel,null=True,on_delete=models.CASCADE)
     group = models.ManyToManyField("GroupPermission")
-    
-
-
-
+    businessentity = models.ForeignKey(
+        "multistore.BusinessEntity",on_delete=models.CASCADE,null=True
+    )
 
     def __str__(self) -> str:
         return self.email
