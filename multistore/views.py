@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework.views import APIView
 from django.utils import translation
 from django.utils.translation import gettext as _
@@ -6,7 +5,14 @@ from django.conf import settings
 from django.http import  JsonResponse
 from rest_framework import status as http_status
 import polib
-
+from rest_framework.views import APIView
+from rest_framework import status
+from rest_framework.response import Response
+from . serializers import ( 
+BusinessEntityRegistrationSerializer,
+QrSingatureSerializer
+)
+import json
 
 class LanguageDetails(APIView):
     
@@ -94,3 +100,45 @@ class LanguageCrud(APIView):
             return JsonResponse({'success': True, 'message': 'Remove Updated Successfully'},http_status.HTTP_200_OK)
         except Exception as e:
             return JsonResponse({'success': False, 'message': 'Error creating and updating translations'},http_status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class BusinessEntityRegistrations(APIView):
+    serializer_class = BusinessEntityRegistrationSerializer
+
+    def get(self,request):
+        return Response({"message":"get api"},status=status.HTTP_200_OK)
+
+    def post(self,request):
+        checking = BusinessEntityRegistrationSerializer(data=request.data)
+        if checking.is_valid():
+            name = checking.validated_data.get('owner')
+            return Response({"message":"done"})
+        return Response({"message":checking.errors})
+    
+
+class QrSingature(APIView):
+    serializer_class = QrSingatureSerializer
+
+    def get(self,request,id:int):
+        print(id,"get")
+        return Response({"message":"data"})
+
+    def post(self,request,*args,**kwargs):
+        print("data")
+
+        return Response({})
+
+    def put(self,request,id:int):
+        print(id,"put")
+
+        return Response({
+
+        })
+    
+    def patch(self,request,id:int):
+        print("patch",id)
+        return Response({})
+
+    def delete(self,request,id:int):
+        print(id,"delete")
+        return Response({})    

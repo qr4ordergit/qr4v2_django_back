@@ -17,7 +17,6 @@ class CustomUser(AbstractUser):
     businessentity = models.ForeignKey(
         "multistore.BusinessEntity",on_delete=models.CASCADE,null=True
     )
-
     def __str__(self) -> str:
         return self.email
     
@@ -26,11 +25,9 @@ class Operation(models.Model):
     def __str__(self) -> str:
         return self.name
 
-
 class Permission(models.Model):
     name = models.CharField(max_length=100)
     
-
     def save(self, *args, **kwargs):
         self.name = self.name.replace(' ', '_')
         self.name = self.name.upper()
