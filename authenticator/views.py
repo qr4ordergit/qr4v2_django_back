@@ -16,7 +16,7 @@ from .utils import (
 from .models import UserLevel
 from multistore.models import BusinessEntity
 
-from .token_decoder import get_cognito_public_keys, verify_cognito_access_token, silent_token_refresh
+from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
 
 
 cognito_region = settings.AWS_REGION
