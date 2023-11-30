@@ -34,7 +34,6 @@ class OwnerRegistration(APIView):
 
         try:
             user_attributes = [
-                # {'Name': 'custom:Establishment_Names', 'Value': establishment_name},
                 {'Name': 'email', 'Value': email},
             ]
 
@@ -93,7 +92,6 @@ class EmployeeRegistration(APIView):
             role = request.POST.get('role')
             password = request.POST.get('password')
             businessentity = request.POST.get('businessentity')
-            group_name = 'Staff'
             placeholder_email = f'{user_name}@example.com'
             password = f'Qr4oreder@{password}'
 
@@ -127,7 +125,7 @@ class EmployeeRegistration(APIView):
             add_user_to_group = cognito_client.admin_add_user_to_group(
                 UserPoolId=user_pool_id,
                 Username=role,
-                GroupName=group_name,
+                GroupName='Staff',
             )
 
             group_responce = add_user_to_group['ResponseMetadata']['HTTPStatusCode']
@@ -144,7 +142,7 @@ class EmployeeRegistration(APIView):
             return Response({'success': False, 'message': 'Invalid Password.'})
         except ClientError as e:
             print(f"User signup failed =>> {e}")
-            return Response({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
+            return Response({'success': False, 'message': 'User creation failed. Please check your input and try again.'})
 
 
 class UserLogin(APIView):
@@ -191,8 +189,6 @@ class UserLogin(APIView):
                         access_token, public_keys)
 
                     if decoded_token:
-                        # Access token is valid, perform additional actions
-                        # Include additional user data as needed
                         if  username_or_email == 'test': 
                             user_type = 'Manager' 
                         elif username_or_email == 'test2':
@@ -207,17 +203,17 @@ class UserLogin(APIView):
                                 'refresh_token': refresh_token, 'user_data': user_data}
                         return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                     else:
-                        return JsonResponse({'success': False, 'message': 'Access token verification failed.'})
+                        return Response({'success': False, 'message': 'Access token verification failed.'})
             
-            return JsonResponse({'success': False, 'message': 'Incorrect username or password.'})    
+            return Response({'success': False, 'message': 'Incorrect username or password.'})    
         
         except cognito_client.exceptions.UserNotConfirmedException:
-            return JsonResponse({'success': False, 'verified': False, 'message': 'User not Verified.'})
+            return Response({'success': False, 'verified': False, 'message': 'User not Verified.'})
         except cognito_client.exceptions.NotAuthorizedException:
-            return JsonResponse({'success': False, 'message': 'Incorrect username or password.'})
+            return Response({'success': False, 'message': 'Incorrect username or password.'})
         except ClientError as e:
             print(f"Authentication failed: {e}")
-            return JsonResponse({'success': False, 'message': str(e)})
+            return Response({'success': False, 'message': str(e)})
 
 
 class UserAuthentication(APIView):
@@ -235,10 +231,10 @@ class UserAuthentication(APIView):
 
             return JsonResponse({'success': True, 'data': response, 'message': "User Authentication confirmed."})
         except cognito_client.exceptions.ExpiredCodeException:
-            return JsonResponse({'success': False, 'message': 'Invalid code provided, please request a code again.'})
+            return Response({'success': False, 'message': 'Invalid code provided, please request a code again.'})
         except ClientError as e:
             print("UserAuthentication error = ", e)
-            return JsonResponse({'success': False, 'message': str(e)})
+            return Response({'success': False, 'message': str(e)})
 
 
 class ResendConfirmationCode(APIView):
@@ -252,13 +248,13 @@ class ResendConfirmationCode(APIView):
                 Username=username_or_email
             )
 
-            return JsonResponse({'success': True, 'data': response, 'message': 'Confirmation code resent successfully.'})
+            return Response({'success': True, 'message': 'Confirmation code resent successfully.'})
         
         except cognito_client.exceptions.UserNotFoundException:
-            return JsonResponse({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
+            return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
         except ClientError as e:
             print(f"Error resending confirmation code: {e}")
-            return JsonResponse({'success': False, 'message': str(e)})
+            return Response({'success': False, 'message': str(e)})
 
 
 class account_recovery(APIView):
@@ -272,17 +268,17 @@ class account_recovery(APIView):
                 Username=email,
             )
 
-            return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'message': 'Password recovery initiated successfully. Check your email for instructions."'})
+            return Response({'success': True, 'status_code': status.HTTP_200_OK, 'message': 'Password recovery initiated successfully. Check your email for instructions."'})
 
         except cognito_client.exceptions.UserNotFoundException:
-            return JsonResponse({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
+            return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
         except cognito_client.exceptions.NotAuthorizedException:
-            return JsonResponse({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
+            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
         except cognito_client.exceptions.LimitExceededException:
-            return JsonResponse({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': "Request limit exceeded. Please try again later."})
+            return Response({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': "Request limit exceeded. Please try again later."})
         except Exception as e:
             print(f"An error occurred: {e}")
-            return JsonResponse({'success': False, 'data': response, 'message': [e]})
+            return Response({'success': False, 'data': response, 'message': [e]})
 
 class UserDetailsUpdate(APIView):
     
@@ -303,16 +299,15 @@ class UserDetailsUpdate(APIView):
                     UserAttributes=user_attributes
                 )
 
-                print("response-=-=-=", response)
-                return JsonResponse({'success': True, 'message': "User Details Updated Successfully."})
+                return Response({'success': True, 'message': "User Details Updated Successfully."})
             
-            return JsonResponse({'success': False, 'status_code': status.HTTP_400_BAD_REQUEST ,'message': "Request Failed. Please try again later."})
+            return Response({'success': False, 'status_code': status.HTTP_400_BAD_REQUEST ,'message': "Request Failed. Please try again later."})
         except cognito_client.exceptions.InvalidParameterException:
-            return JsonResponse({'success': False, 'message': f"Invalid Parameter, Please try again."})
+            return Response({'success': False, 'message': f"Invalid Parameter, Please try again."})
         except cognito_client.exceptions.UserNotFoundException:
-            return JsonResponse({'success': False, 'status_code': status.HTTP_404_NOT_FOUND,'message': f"User Not Found, Please try again."})
+            return Response({'success': False, 'status_code': status.HTTP_404_NOT_FOUND,'message': f"User Not Found, Please try again."})
         # except cognito_client.exceptions.LimitExceededException:
-        #     return JsonResponse({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': f"Internal Server Error, Please try again."})
+        #     return Response({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': f"Internal Server Error, Please try again."})
         except Exception as e:
             print(f"An error occurred: {e}")
-            return JsonResponse({'success': False, 'message': str(e)})
+            return Response({'success': False, 'message': str(e)})
