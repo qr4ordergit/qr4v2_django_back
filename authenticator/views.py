@@ -149,10 +149,6 @@ class EmployeeRegistration(APIView):
 
 class UserLogin(APIView):
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
     def post(self, request):
         try:
             username_or_email = request.POST.get('username_or_email')
@@ -226,10 +222,6 @@ class UserLogin(APIView):
 
 class UserAuthentication(APIView):
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
     def post(self, request):
         try:
             email = request.POST.get('email')
@@ -251,10 +243,6 @@ class UserAuthentication(APIView):
 
 class ResendConfirmationCode(APIView):
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
     def post(self, request):
         try:
             username_or_email = request.POST.get('username_or_email')
@@ -263,8 +251,6 @@ class ResendConfirmationCode(APIView):
                 ClientId=client_id,
                 Username=username_or_email
             )
-
-            print("Confirmation code resent successfully.")
 
             return JsonResponse({'success': True, 'data': response, 'message': 'Confirmation code resent successfully.'})
         
@@ -276,9 +262,6 @@ class ResendConfirmationCode(APIView):
 
 
 class account_recovery(APIView):
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
 
     def post(self, request):
         try:
@@ -302,9 +285,6 @@ class account_recovery(APIView):
             return JsonResponse({'success': False, 'data': response, 'message': [e]})
 
 class UserDetailsUpdate(APIView):
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
     
     def post(self, request):
         try:

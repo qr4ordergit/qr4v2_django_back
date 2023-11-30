@@ -3,7 +3,8 @@ import requests
 from django.conf import settings
 
 cognito_region = settings.AWS_REGION 
-user_pool_id = settings.COGNITO_USER_POOL_ID 
+user_pool_id = settings.COGNITO_USER_POOL_ID
+client_id = settings.COGNITO_APP_CLIENT_ID 
 
 def get_cognito_public_keys():
     # Retrieve Cognito public keys
@@ -19,15 +20,15 @@ def verify_cognito_access_token(access_token, public_keys):
         header = jwt.get_unverified_header(access_token)
         kid = header['kid']
         key = public_keys[kid]
-
-        decoded_token = jwt.decode(access_token, key, algorithms=['RS256'], audience='your-client-id')
-        return decoded_token
+        
+        if key:
+            decoded_token = jwt.decode(access_token, key, algorithms=['RS256'], audience=client_id)
+            return decoded_token
+        else:
+            raise jwt.JWTError("Invalid key ID")
     except jwt.ExpiredSignatureError:
-        print("Token has expired.")
-        return None
+        raise jwt.ExpiredSignatureError("Token has expired.")
     except jwt.JWTClaimsError:
-        print("Invalid token claims.")
-        return None
-    except Exception as e:
-        print(f"Token verification failed: {e}")
-        return None
+        raise jwt.JWTClaimsError("Invalid token claims.")
+    except jwt.JWTError as e:
+        raise jwt.JWTError(f"Token verification failed: {e}")
