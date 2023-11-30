@@ -4,6 +4,7 @@ from random import choices
 import uuid
 import time
 from authenticator.models import CustomUser
+from django.urls import reverse
 
 # class Country(models.Model):
 #     NAME = models.CharField(max_length=250, null=False, blank=False)
@@ -38,14 +39,13 @@ class BusinessEntity(CommonFields):
     description = models.TextField(default='',null=True,blank=True)
     status = models.BooleanField(default=False)
     owner = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="owner",null=True)
-    # timezone = models.ForeignKey(Timezone, on_delete=models.CASCADE, related_name='restaurant_timezone', null=True)
-    # country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='restaurant_country',default='',null=True,blank=True)
-    # currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='restaurant_currency',default='1',null=True, blank=True)
+
+    
     def __str__(self) -> str:
         return self.name
 
 class QrSingature(CommonFields):
-    restaurant = models.ForeignKey(BusinessEntity, on_delete=models.CASCADE, related_name="restauranttable_restaurant",null=True, blank=True)
+    businessentity = models.ForeignKey(BusinessEntity, on_delete=models.CASCADE, related_name="restauranttable_restaurant",null=True, blank=True)
     table_name = models.CharField(max_length=20,null=True, blank=True)
     qr_code = models.FileField(null=True, blank=True)
     description = models.TextField(default='', null=True, blank=True)
@@ -63,7 +63,6 @@ def create_session_pin():
     abs_unique_id = abs(unique_id)
     code = ''.join(choices(str(abs_unique_id),k=4))
     return code
-
 
 #table session
 class OrderSession(CommonFields):
@@ -89,6 +88,7 @@ class OrderDetails(CommonFields):
     item_price = models.FloatField()
     item_unit = models.CharField(max_length=10,default="")
     order_serial_no = models.IntegerField()
+
 
     def __str__(self) -> str:
         return self.item_total_price + self.item_price 
