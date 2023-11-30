@@ -9,14 +9,14 @@ from botocore.exceptions import ClientError
 from rest_framework.views import APIView
 from getpass import getpass
 from rest_framework.response import Response
-import datetime
+from datetime import datetime, timedelta
 from .utils import (
     user_registration
 )
 from .models import UserLevel
 from multistore.models import BusinessEntity
 
-from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
+from .token_decoder import get_cognito_public_keys, verify_cognito_access_token, silent_token_refresh
 
 
 cognito_region = settings.AWS_REGION
@@ -197,10 +197,10 @@ class UserLogin(APIView):
                             user_type = 'Owner'
 
                         user_data = {'sub': decoded_token.get('sub'), 
-                                    'user_type': user_type}
+                                    'user_type': user_type, 'email':username_or_email}
                         
-                        data = {'access_token': access_token,
-                                'refresh_token': refresh_token, 'user_data': user_data}
+                        data = {'user_data': user_data,'access_token': access_token,
+                                'refresh_token': refresh_token}
                         return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                     else:
                         return Response({'success': False, 'message': 'Access token verification failed.'})
