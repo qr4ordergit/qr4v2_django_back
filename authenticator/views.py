@@ -93,7 +93,7 @@ class EmployeeRegistration(APIView):
             password = request.POST.get('password')
             businessentity = request.POST.get('businessentity')
             placeholder_email = f'{user_name}@example.com'
-            password = f'Qr4oreder@{password}'
+            password = f'Qr4order@{password}'
 
             check_business = self.businessentity_data(businessentity)
             if check_business == None:
@@ -155,7 +155,7 @@ class UserLogin(APIView):
             if username_or_email and password:
 
                 if '@'not in username_or_email:
-                    password = f'Qr4oreder@{password}'
+                    password = f'Qr4order@{password}'
                 
 
                 response = cognito_client.initiate_auth(

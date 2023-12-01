@@ -2,6 +2,7 @@ from jose import jwt
 import requests
 import boto3
 from django.conf import settings
+
 cognito_region = settings.AWS_REGION 
 user_pool_id = settings.COGNITO_USER_POOL_ID
 client_id = settings.COGNITO_APP_CLIENT_ID 
@@ -13,7 +14,8 @@ def get_cognito_public_keys():
     jwks_url = f'https://cognito-idp.{cognito_region}.amazonaws.com/{user_pool_id}/.well-known/jwks.json'
     response = requests.get(jwks_url)
     jwks = response.json()['keys']
-    return {key['kid']: key for key in jwks}
+    public_keys = {key['kid']: key for key in jwks}
+    return public_keys
 
 
 def verify_cognito_access_token(access_token, public_keys):
