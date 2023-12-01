@@ -1,9 +1,11 @@
 from jose import jwt
 import requests
+import boto3
 from django.conf import settings
 cognito_region = settings.AWS_REGION 
 user_pool_id = settings.COGNITO_USER_POOL_ID
 client_id = settings.COGNITO_APP_CLIENT_ID 
+cognito_client = boto3.client('cognito-idp', region_name=cognito_region)
 
 def get_cognito_public_keys():
     # Retrieve Cognito public keys
@@ -32,3 +34,18 @@ def verify_cognito_access_token(access_token, public_keys):
         raise jwt.JWTClaimsError("Invalid token claims.")
     except jwt.JWTError as e:
         raise jwt.JWTError(f"Token verification failed: {e}")
+    
+def silent_token_refresh(expired_refresh_token):
+
+    try:
+        response = cognito_client.initiate_auth(
+            ClientId=client_id,
+            AuthFlow='REFRESH_TOKEN_AUTH',
+            AuthParameters={
+                'REFRESH_TOKEN': expired_refresh_token
+            }
+        )
+
+        return response
+    except:
+        pass

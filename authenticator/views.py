@@ -16,7 +16,7 @@ from .utils import (
 from .models import UserLevel
 from multistore.models import BusinessEntity
 
-from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
+from .token_decoder import get_cognito_public_keys, verify_cognito_access_token, silent_token_refresh
 
 
 cognito_region = settings.AWS_REGION
@@ -183,27 +183,28 @@ class UserLogin(APIView):
                 if 'AuthenticationResult' in response:
                     access_token = response['AuthenticationResult']['AccessToken']
                     refresh_token = response['AuthenticationResult']['RefreshToken']
-                    # Verifing the access token using python-jose
-                    public_keys = get_cognito_public_keys()
-                    decoded_token = verify_cognito_access_token(
-                        access_token, public_keys)
 
-                    if decoded_token:
-                        if  username_or_email == 'test': 
-                            user_type = 'Manager' 
-                        elif username_or_email == 'test2':
-                            user_type = 'Waiter'
-                        else:
-                            user_type = 'Owner'
+                    # new_refresh_token = silent_token_refresh(refresh_token)
+                  
+                    expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
 
-                        user_data = {'sub': decoded_token.get('sub'), 
-                                    'user_type': user_type, 'email':username_or_email}
-                        
-                        data = {'user_data': user_data,'access_token': access_token,
-                                'refresh_token': refresh_token}
-                        return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
+                    expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
+                    print("silent_token_refresh-=-=-=-=-=",expiration_time)
+
+                    if  username_or_email == 'test': 
+                        user_type = 'Manager' 
+                    elif username_or_email == 'test2':
+                        user_type = 'Waiter'
                     else:
-                        return Response({'success': False, 'message': 'Access token verification failed.'})
+                        user_type = 'Owner'
+
+                    user_data = {'expiration_time':expiration_time,'user_type': user_type, 'email':username_or_email}
+                        
+                    data = {'user_data': user_data,'access_token': access_token,
+                            'refresh_token': refresh_token}
+                    return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
+                else:
+                    return Response({'success': False, 'message': 'Access token verification failed.'})
             
             return Response({'success': False, 'message': 'Incorrect username or password.'})    
         
