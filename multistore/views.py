@@ -105,8 +105,8 @@ class LanguageCrud(APIView):
 
 
 class BusinessEntityRegistrations(APIView):
-    # permission_classes = [IsAuthenticated]
-    # authentication_classes = [CustomAuthentication]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CustomAuthentication]
     serializer_class = BusinessEntityRegistrationSerializer
 
     def get(self,request):
@@ -121,6 +121,8 @@ class BusinessEntityRegistrations(APIView):
     
 
 class QrSingature(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CustomAuthentication]
     serializer_class = QrSingatureSerializer
 
     def get(self,request,id:int):
