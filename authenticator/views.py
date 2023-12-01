@@ -92,6 +92,7 @@ class EmployeeRegistration(APIView):
             role = request.POST.get('role')
             password = request.POST.get('password')
             businessentity = request.POST.get('businessentity')
+            
             placeholder_email = f'{user_name}@example.com'
             password = f'Qr4order@{password}'
 
@@ -183,14 +184,10 @@ class UserLogin(APIView):
                 if 'AuthenticationResult' in response:
                     access_token = response['AuthenticationResult']['AccessToken']
                     refresh_token = response['AuthenticationResult']['RefreshToken']
-
-                    # new_refresh_token = silent_token_refresh(refresh_token)
-                  
                     expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
 
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
-                    print("silent_token_refresh-=-=-=-=-=",expiration_time)
-
+                    
                     if  username_or_email == 'test': 
                         user_type = 'Manager' 
                     elif username_or_email == 'test2':
