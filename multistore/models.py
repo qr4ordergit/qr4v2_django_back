@@ -40,6 +40,7 @@ class BusinessEntity(CommonFields):
     status = models.BooleanField(default=False)
     owner = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="owner",null=True)
     
+    
     def __str__(self) -> str:
         return self.name
 

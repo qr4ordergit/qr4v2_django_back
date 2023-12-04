@@ -149,7 +149,7 @@ class UserLogin(APIView):
 
     def get_user(self,usrename):
         try:
-            user = CustomUser.objects.get(username=usrename)
+            user = CustomUser.objects.get(username=usrename).id
         except Exception as e:
             print(e,"error")
             user = None
@@ -204,7 +204,7 @@ class UserLogin(APIView):
                     else:
                         user_type = 'Owner'
 
-                    user_data = {'expiration_time':expiration_time,'user_type': user_type, 'email':username_or_email,'user_id':get_user_id.id}
+                    user_data = {'expiration_time':expiration_time,'user_type': user_type, 'email':username_or_email,'user_id':get_user_id}
                     data = {'user_data': user_data,'access_token': access_token,
                             'refresh_token': refresh_token}
                     return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
