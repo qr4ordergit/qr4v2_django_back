@@ -13,9 +13,8 @@ from datetime import datetime, timedelta
 from .utils import (
     user_registration
 )
-from .models import UserLevel
+from .models import UserLevel,CustomUser
 from multistore.models import BusinessEntity
-
 from .token_decoder import get_cognito_public_keys, verify_cognito_access_token, silent_token_refresh
 
 
@@ -148,6 +147,13 @@ class EmployeeRegistration(APIView):
 
 class UserLogin(APIView):
 
+    def get_user(self,usrename):
+        try:
+            user = CustomUser.objects(username=usrename)
+        except:
+            user = None
+        return user
+
     def post(self, request):
         try:
             username_or_email = request.POST.get('username_or_email')
@@ -187,6 +193,8 @@ class UserLogin(APIView):
                     expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
 
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
+
+                    get_user_id = self.get_user(username_or_email)
                     
                     if  username_or_email == 'test': 
                         user_type = 'Manager' 
@@ -195,8 +203,7 @@ class UserLogin(APIView):
                     else:
                         user_type = 'Owner'
 
-                    user_data = {'expiration_time':expiration_time,'user_type': user_type, 'email':username_or_email}
-                        
+                    user_data = {'expiration_time':expiration_time,'user_type': user_type, 'email':username_or_email,'user_id':get_user_id}
                     data = {'user_data': user_data,'access_token': access_token,
                             'refresh_token': refresh_token}
                     return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
