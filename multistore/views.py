@@ -105,7 +105,6 @@ class LanguageCrud(APIView):
         except Exception as e:
             return JsonResponse({'success': False, 'message': 'Error creating and updating translations'},http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class BusinessEntityRegistrations(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CustomAuthentication]
