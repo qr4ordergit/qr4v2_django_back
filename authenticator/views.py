@@ -63,9 +63,6 @@ class OwnerRegistration(APIView):
             return JsonResponse({'success': False,'message': 'Invalid Password.'})
         except ClientError as e:
             print(f"User signup failed =>> {e}")
-            # delete_user = cognito_client.admin_delete_user(
-            #                 UserPoolId=user_pool_id,
-            #                 Username=email )
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
     
 class EmployeeRegistration(APIView): 
@@ -263,29 +260,6 @@ class ResendConfirmationCode(APIView):
             return Response({'success': False, 'message': str(e)})
 
 
-class account_recovery(APIView):
-
-    def post(self, request):
-        email = request.POST.get('email')
-        try:
-            
-            response = cognito_client.forgot_password(
-                ClientId=client_id,
-                Username=email,
-            )
-
-            return Response({'success': True, 'status_code': status.HTTP_200_OK, 'message': 'Password recovery initiated successfully. Check your email for instructions."'})
-
-        except cognito_client.exceptions.UserNotFoundException:
-            return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
-        except cognito_client.exceptions.NotAuthorizedException:
-            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
-        except cognito_client.exceptions.LimitExceededException:
-            return Response({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': "Request limit exceeded. Please try again later."})
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            return Response({'success': False, 'data': response, 'message': [e]})
-
 class UserDetailsUpdate(APIView):
     def post(self, request):
         try:
@@ -319,7 +293,7 @@ class UserDetailsUpdate(APIView):
 
 
 
-class ForgotPassword(APIView):
+class AccountRecovery(APIView):
 
     def get(self, request):
         username = request.POST.get('username')
@@ -351,3 +325,57 @@ class ForgotPassword(APIView):
         except cognito_client.exceptions as e:
             print(f"An error occurred: {e}")
             return Response({'success': False, 'message': str(e)})
+        
+
+class UserPasswordUpdate(APIView):
+
+    def post(self, request):
+
+        username = request.POST.get('username')
+        old_password = request.POST.get('old_password')
+        new_password = request.POST.get('new_password')
+
+        try:
+            password = f'Qr4order@{old_password}'
+
+            access_token = cognito_client.initiate_auth(
+                    ClientId=client_id,
+                    AuthFlow='USER_PASSWORD_AUTH',
+                    AuthParameters={
+                        'USERNAME': username,
+                        'PASSWORD': password
+                    }
+                )
+            
+            if 'AuthenticationResult' in access_token:
+                    new_password = f'Qr4order@{new_password}'
+                    access_token = access_token['AuthenticationResult']['AccessToken']
+                    responce = cognito_client.change_password(
+                        PreviousPassword = password,
+                        ProposedPassword = new_password,    
+                        AccessToken = access_token,
+                    )
+                    return JsonResponse({'success': True,'status_code': status.HTTP_200_OK, 'data':responce, 'message': 'Password Changed.'})
+            return Response({'success': False,  'status_code': status.HTTP_400_BAD_REQUEST ,'message': 'Parameters Mismatch.'})
+        except cognito_client.exceptions.NotAuthorizedException:
+            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."}) 
+        
+
+class DeleteUser(APIView):
+
+    def post(self, request):
+        username = request.POST.get('username')
+        try:
+            delete_user = cognito_client.admin_delete_user(
+                                UserPoolId=user_pool_id,
+                                Username=username 
+                                )
+            print("User deleted",delete_user)
+            return JsonResponse({'success': True,'status_code': status.HTTP_200_OK, 'message': f'User {username} Deleted.'})
+        
+        except cognito_client.exceptions.NotAuthorizedException:
+            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."}) 
+        except cognito_client.exceptions as e:
+            print(f"An error occurred: {e}")
+            return Response({'success': False, 'message': str(e)})
+
