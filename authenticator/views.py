@@ -195,7 +195,7 @@ class UserLogin(APIView):
 
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
 
-                    get_user_id = self.get_user(username_or_email)
+                    get_user_id = self.get_user(username_or_email) 
                     
                     if  username_or_email == 'test': 
                         user_type = 'Manager' 
@@ -266,9 +266,9 @@ class ResendConfirmationCode(APIView):
 class account_recovery(APIView):
 
     def post(self, request):
+        email = request.POST.get('email')
         try:
-            email = request.POST.get('email')
-
+            
             response = cognito_client.forgot_password(
                 ClientId=client_id,
                 Username=email,
@@ -314,5 +314,40 @@ class UserDetailsUpdate(APIView):
         # except cognito_client.exceptions.LimitExceededException:
         #     return Response({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': f"Internal Server Error, Please try again."})
         except Exception as e:
+            print(f"An error occurred: {e}")
+            return Response({'success': False, 'message': str(e)})
+
+
+
+class ForgotPassword(APIView):
+
+    def get(self, request):
+        username = request.POST.get('username')
+        code = request.POST.get('code')
+        password = request.POST.get('password')
+        try:
+            if '@' in username:
+                responce = cognito_client.forgot_password(
+                    ClientId = client_id,
+                    Username = username,
+                )
+                return Response({'success': True,'data':responce, 'message': 'Confirm with the code sent to your email.'})
+  
+            if code:
+                responce = cognito_client.confirm_forgot_password(
+                    ClientId = client_id,
+                    Username = username,
+                    ConfirmationCode = code,
+                    Password = password,
+                )
+                return Response({'success': True,'data':responce, 'message': 'Password Changed.'})
+        
+        except cognito_client.exceptions.NotAuthorizedException:
+            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
+        except cognito_client.exceptions.LimitExceededException:
+            return Response({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': f"Internal Server Error, Please try again."})
+        except cognito_client.exceptions.UserNotFoundException:
+            return Response({'success': False, 'status_code': status.HTTP_404_NOT_FOUND,'message': f"User Not Found, Please try again."})
+        except cognito_client.exceptions as e:
             print(f"An error occurred: {e}")
             return Response({'success': False, 'message': str(e)})
