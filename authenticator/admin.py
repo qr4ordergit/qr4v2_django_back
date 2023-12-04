@@ -23,12 +23,13 @@ class BaseReadOnlyAdminMixin:
             return True
         else:
             return False
-
+        
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = ['email','is_verify','identity']
     readonly_fields = ('is_verify','identity')
+
 
 @admin.register(StaffPermissions)
 class StaffPermissionsAdmin(admin.ModelAdmin):

@@ -1,5 +1,7 @@
-from django.urls import include, path
+from django.urls import path
 from .views import *
+
+# url = ''
 
 urlpatterns = [
     path('profile/creation/', OwnerRegistration.as_view(), name='owner-registration'),

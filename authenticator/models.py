@@ -47,7 +47,6 @@ class StaffPermissions(models.Model):
 class GroupPermission(models.Model):
     name = models.CharField(max_length=100,help_text="Group name")
     permision = models.ManyToManyField(Permission)
-   
 
     def __str__(self) -> str:
         return self.name

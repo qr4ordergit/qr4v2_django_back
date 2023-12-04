@@ -1,4 +1,3 @@
-#saved user
 from .models import CustomUser
 from django.contrib.contenttypes.models import ContentType
 

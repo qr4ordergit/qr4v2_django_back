@@ -279,7 +279,6 @@ class account_recovery(APIView):
             return Response({'success': False, 'data': response, 'message': [e]})
 
 class UserDetailsUpdate(APIView):
-    
     def post(self, request):
         try:
             current_username = request.POST.get('current_username')

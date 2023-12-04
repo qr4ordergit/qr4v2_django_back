@@ -12,6 +12,8 @@ from . serializers import (
     BusinessEntityRegistrationSerializer,
     QrSingatureSerializer
 )
+from multistore.models import BusinessEntity
+from authenticator.models import CustomUser
 from rest_framework.authentication import  BasicAuthentication
 import json
 from rest_framework.permissions import IsAuthenticated
@@ -109,25 +111,45 @@ class BusinessEntityRegistrations(APIView):
     authentication_classes = [CustomAuthentication]
     serializer_class = BusinessEntityRegistrationSerializer
 
+    def owner_check(self,user_id:int):
+        try:
+            user_obj = CustomUser.objects.get(id=user_id)
+        except:
+            user_obj = None
+        return  user_obj
+
     def get(self,request):
+        
         return Response({"message":"get api"},status=status.HTTP_200_OK)
 
     def post(self,request):
         checking = BusinessEntityRegistrationSerializer(data=request.data)
         if checking.is_valid():
-            name = checking.validated_data.get('owner')
-            return Response({"message":"done"})
+            owner = checking.validated_data.get('owner')
+            custom_user = self.owner_check(owner)
+            if custom_user == None:
+                return Response({
+                    "message":"owner not exits"
+                })
+            name = checking.validated_data.get('name')
+            description = checking.validated_data.get('description')
+            bussiness = BusinessEntity(
+                name = name,
+                description=description,
+                owner = custom_user, 
+            )
+            bussiness.save()
+            return Response({"message":"data saved successfully"})
         return Response({"message":checking.errors})
     
-
 class QrSingature(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CustomAuthentication]
     serializer_class = QrSingatureSerializer
 
-    def get(self,request,id:int):
-        print(id,"get")
-        return Response({"message":"data"})
+    def get_(self,user_id:int):
+       
+        return Response({})
 
     def post(self,request,*args,**kwargs):
         print("data")
