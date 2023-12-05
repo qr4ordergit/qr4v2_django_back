@@ -36,13 +36,20 @@ def silent_token_refresh(refresh_token):
             }
         )
 
-        if 'AuthenticationResult' in response:
+        if 'AuthenticationResult' in response:              
                 access_token = response['AuthenticationResult']['AccessToken']
-                # new_refresh_token = response['AuthenticationResult']['RefreshToken']
                 expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
+                new_refresh_token = response['AuthenticationResult'].get('RefreshToken')
                 expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
-        
-        return JsonResponse({'success': True, 'data': response})
+
+                data ={
+                    'access_token': access_token,
+                    'refresh_token': new_refresh_token,
+                    'expires_in': expires_in_seconds,
+                    'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S')
+                }
+                print("Access_data", data)
+                return JsonResponse({'success': True, 'data': data})
     except cognito_client.exceptions.UserNotFoundException: 
         return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found."})
     except ClientError as e:
@@ -237,6 +244,7 @@ class UserLogin(APIView):
                                 }
                     print("'user_data': user_data,",user_data)
                     data = {'user_data':user_data,'access_token': access_token,
+                            'user_id':get_user_details.id,
                             'refresh_token': refresh_token}
                     return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                 else:
