@@ -22,14 +22,14 @@ class CustomAuthentication(BaseAuthentication):
     def authenticate(self, request):
         header = request.headers.get('Authorization',None)
         if header is None:
-            raise AuthenticationFailed("header is missing")
+            return AuthenticationFailed("header is missing")
         try:
             public_key = get_cognito_public_keys()
             verify = verify_cognito_access_token(header,public_key)
             username_or_email = verify['username']
 
         except Exception as e:
-            raise AuthenticationFailed(e)
+            return AuthenticationFailed(e)
             
         finally:
             user = idetify_user(username_or_email)
