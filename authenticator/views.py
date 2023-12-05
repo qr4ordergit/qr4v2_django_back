@@ -41,10 +41,7 @@ def silent_token_refresh(refresh_token):
                 # new_refresh_token = response['AuthenticationResult']['RefreshToken']
                 expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
                 expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
-        # print("Received", access_token)
-        print("Received", response)
-        # print("Received", new_refresh_token)
-        print("Received", expiration_time)
+        
         return JsonResponse({'success': True, 'data': response})
     except cognito_client.exceptions.UserNotFoundException: 
         return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found."})
@@ -176,7 +173,7 @@ class UserLogin(APIView):
 
     def get_user(self,usrename):
         try:
-            user = CustomUser.objects.only('id','identity','businessentity__referance').get(username=usrename)
+            user = CustomUser.objects.get(username=usrename)
         except Exception as e:
             print(e,"error")
             user = None
@@ -223,9 +220,7 @@ class UserLogin(APIView):
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
                     silent_token_refresh(refresh_token)
                     get_user_details = self.get_user(username_or_email)
-                    print("User-=-=-=-=-=-=-=-=-",get_user_details)
-                    print("User-=-=-=-=-=-=-=-=-",get_user_details)
-                    print("User-=-=-=-=-=-=-=-=-",expiration_time)
+                    
                     
                     if  username_or_email == 'test': 
                         user_type = 'Manager' 
@@ -234,10 +229,14 @@ class UserLogin(APIView):
                     else:
                         user_type = 'Owner'
                     
-                    # user_data = {'expiration_time':expiration_time,'user_id':get_user_details.id,'user_type': get_user_details.identity, 
-                    #              'email':get_user_details,}
-                    # print("'user_data': user_data,",user_data)
-                    data = {'access_token': access_token,
+                    user_data = {'expiration_time':expiration_time,
+                                #  'user_id':get_user_details.id,
+                                 'user_type':user_type,
+                                #  'user_identity': str(get_user_details.identity), 
+                                #  'email':str(get_user_details)
+                                }
+                    print("'user_data': user_data,",user_data)
+                    data = {'user_data':user_data,'access_token': access_token,
                             'refresh_token': refresh_token}
                     return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                 else:
