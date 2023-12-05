@@ -29,25 +29,13 @@ def verify_cognito_access_token(access_token, public_keys):
             decoded_token = jwt.decode(access_token, key, algorithms=['RS256'], audience=client_id)
             return decoded_token
         else:
-            raise jwt.JWTError("Invalid key ID")
+            return jwt.JWTError("Invalid key ID")
     except jwt.ExpiredSignatureError:
-        raise jwt.ExpiredSignatureError("Token has expired.")
+        return jwt.ExpiredSignatureError("Token has expired.")
     except jwt.JWTClaimsError:
-        raise jwt.JWTClaimsError("Invalid token claims.")
+        return jwt.JWTClaimsError("Invalid token claims.")
     except jwt.JWTError as e:
-        raise jwt.JWTError(f"Token verification failed: {e}")
-    
-def silent_token_refresh(expired_refresh_token):
+        return jwt.JWTError(f"Token verification failed: {e}")
 
-    try:
-        response = cognito_client.initiate_auth(
-            ClientId=client_id,
-            AuthFlow='REFRESH_TOKEN_AUTH',
-            AuthParameters={
-                'REFRESH_TOKEN': expired_refresh_token
-            }
-        )
 
-        return response
-    except:
-        pass
+

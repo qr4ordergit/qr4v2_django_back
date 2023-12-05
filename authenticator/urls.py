@@ -2,6 +2,7 @@ from django.urls import include, path
 from .views import *
 
 urlpatterns = [
+    path('refresh/token/', silent_token_refresh),
     path('profile/creation/', OwnerRegistration.as_view(), name='owner-registration'),
     path('employee/creation/', EmployeeRegistration.as_view(), name='employee-creation'),    
     path('employee/updation/', UserDetailsUpdate.as_view(), name='employee-updation'),    

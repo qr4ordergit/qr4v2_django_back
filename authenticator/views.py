@@ -15,7 +15,7 @@ from .utils import (
 )
 from .models import UserLevel,CustomUser
 from multistore.models import Outlet
-from .token_decoder import get_cognito_public_keys, verify_cognito_access_token, silent_token_refresh
+from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
 
 
 cognito_region = settings.AWS_REGION
@@ -24,6 +24,33 @@ user_pool_id = settings.COGNITO_USER_POOL_ID
 cognito_client = boto3.client('cognito-idp', region_name=cognito_region)
 
 
+def silent_token_refresh(refresh_token):
+
+    try:
+        response = cognito_client.admin_initiate_auth(
+            UserPoolId=user_pool_id,
+            ClientId=client_id,
+            AuthFlow='REFRESH_TOKEN_AUTH',
+            AuthParameters={
+                'REFRESH_TOKEN': refresh_token
+            }
+        )
+
+        if 'AuthenticationResult' in response:
+                access_token = response['AuthenticationResult']['AccessToken']
+                # new_refresh_token = response['AuthenticationResult']['RefreshToken']
+                expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
+                expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
+        # print("Received", access_token)
+        print("Received", response)
+        # print("Received", new_refresh_token)
+        print("Received", expiration_time)
+        return JsonResponse({'success': True, 'data': response})
+    except cognito_client.exceptions.UserNotFoundException: 
+        return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found."})
+    except ClientError as e:
+        return Response({'success': False, 'data':str(e)})
+    
 class OwnerRegistration(APIView):
 
     def post(self, request):
@@ -149,7 +176,7 @@ class UserLogin(APIView):
 
     def get_user(self,usrename):
         try:
-            user = CustomUser.objects.get(username=usrename).id
+            user = CustomUser.objects.only('id','identity','businessentity__referance').get(username=usrename)
         except Exception as e:
             print(e,"error")
             user = None
@@ -194,8 +221,11 @@ class UserLogin(APIView):
                     expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
 
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
-
-                    get_user_id = self.get_user(username_or_email)
+                    silent_token_refresh(refresh_token)
+                    get_user_details = self.get_user(username_or_email)
+                    print("User-=-=-=-=-=-=-=-=-",get_user_details)
+                    print("User-=-=-=-=-=-=-=-=-",get_user_details)
+                    print("User-=-=-=-=-=-=-=-=-",expiration_time)
                     
                     if  username_or_email == 'test': 
                         user_type = 'Manager' 
@@ -204,9 +234,10 @@ class UserLogin(APIView):
                     else:
                         user_type = 'Owner'
                     
-
-                    user_data = {'expiration_time':expiration_time,'user_type': user_type, 'email':username_or_email,'user_id':get_user_id}
-                    data = {'user_data': user_data,'access_token': access_token,
+                    # user_data = {'expiration_time':expiration_time,'user_id':get_user_details.id,'user_type': get_user_details.identity, 
+                    #              'email':get_user_details,}
+                    # print("'user_data': user_data,",user_data)
+                    data = {'access_token': access_token,
                             'refresh_token': refresh_token}
                     return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                 else:
