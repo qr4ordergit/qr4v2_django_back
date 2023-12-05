@@ -14,8 +14,7 @@ from .utils import (
     user_registration
 )
 from .models import UserLevel,CustomUser
-from multistore.models import BusinessEntity
-from multistore.custom_authetication import CustomAuthentication
+from multistore.models import Outlet
 from .token_decoder import get_cognito_public_keys, verify_cognito_access_token, silent_token_refresh
 
 
@@ -64,6 +63,9 @@ class OwnerRegistration(APIView):
             return JsonResponse({'success': False,'message': 'Invalid Password.'})
         except ClientError as e:
             print(f"User signup failed =>> {e}")
+            # delete_user = cognito_client.admin_delete_user(
+            #                 UserPoolId=user_pool_id,
+            #                 Username=email )
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
     
 class EmployeeRegistration(APIView): 
@@ -75,9 +77,9 @@ class EmployeeRegistration(APIView):
         except:
             return False
         
-    def businessentity_data(self,id:int):
+    def get_outlet_code(self,code):
         try:
-            object = BusinessEntity.objects.get(id=id)
+            object = Outlet.objects.get(outlet_code=code)
             return object
         except:
             return None
@@ -88,13 +90,13 @@ class EmployeeRegistration(APIView):
             username = request.POST.get('username')
             role = request.POST.get('role')
             password = request.POST.get('password')
-            businessentity = request.POST.get('businessentity')
+            outletcode = request.POST.get('outletcode')
             
             placeholder_email = f'{username}@example.com'
             password = f'Qr4order@{password}'
 
-            check_business = self.businessentity_data(businessentity)
-            if check_business == None:
+            outlet_obj = self.get_outlet_code(outletcode)
+            if outlet_obj == None:
                 return Response({
                     "message":"businessentity not exits"
                 })
@@ -193,10 +195,10 @@ class UserLogin(APIView):
 
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
 
-                    get_user_id = self.get_user(username_or_email) 
+                    get_user_id = self.get_user(username_or_email)
                     
                     if  username_or_email == 'test': 
-                        user_type = 'Manager'
+                        user_type = 'Manager' 
                     elif username_or_email == 'test2':
                         user_type = 'Waiter'
                     else:
@@ -261,6 +263,29 @@ class ResendConfirmationCode(APIView):
             print(f"Error resending confirmation code: {e}")
             return Response({'success': False, 'message': str(e)})
 
+
+class account_recovery(APIView):
+
+    def post(self, request):
+        try:
+            email = request.POST.get('email')
+
+            response = cognito_client.forgot_password(
+                ClientId=client_id,
+                Username=email,
+            )
+
+            return Response({'success': True, 'status_code': status.HTTP_200_OK, 'message': 'Password recovery initiated successfully. Check your email for instructions."'})
+
+        except cognito_client.exceptions.UserNotFoundException:
+            return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
+        except cognito_client.exceptions.NotAuthorizedException:
+            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
+        except cognito_client.exceptions.LimitExceededException:
+            return Response({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': "Request limit exceeded. Please try again later."})
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return Response({'success': False, 'data': response, 'message': [e]})
 
 class UserDetailsUpdate(APIView):
     def post(self, request):
@@ -364,7 +389,7 @@ class UserPasswordUpdate(APIView):
         
 
 class DeleteUser(APIView):
-    authentication_classes = [CustomAuthentication]
+
     def post(self, request):
         username = request.POST.get('username')
         try:
