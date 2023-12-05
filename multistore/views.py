@@ -35,7 +35,7 @@ class BusinessEntityRegistrations(APIView):
         return  user_obj
 
     def get(self,request,owner_id):
-        business_entity = BusinessEntity.objects.filter(owner__id=owner_id)
+        business_entity = BusinessEntity.objects.filter(owner=owner_id)
         business_entity = BusinessEntityRegistrationSerializer(business_entity,many=True).data
         return Response({"data":business_entity},status=status.HTTP_200_OK)
 
