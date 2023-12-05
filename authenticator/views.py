@@ -98,7 +98,7 @@ class EmployeeRegistration(APIView):
             outlet_obj = self.get_outlet_code(outletcode)
             if outlet_obj == None:
                 return Response({
-                    "message":"businessentity not exits"
+                    "message":"outlet not exits"
                 })
 
             user_level_check = self.check_user_level_exits(role)

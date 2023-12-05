@@ -6,18 +6,6 @@ import time
 from authenticator.models import CustomUser
 from django.urls import reverse
 
-# class Country(models.Model):
-#     NAME = models.CharField(max_length=250, null=False, blank=False)
-#     LANGUAGE = models.CharField(max_length=250, null=False, blank=False)
-
-# class Currency(models.Model):
-#     NAME = models.CharField(max_length=250, null=False, blank=False)   
-
-# class Timezone(models.Model):
-#     TimeZone = models.CharField(max_length=100)
-#     Region = models.CharField(max_length=100)
-#     UTCOffset = models.CharField(max_length=100)
-
 
 class CommonFields(models.Model):
     created_at = models.DateTimeField(auto_now_add=True,null=True,blank=True)

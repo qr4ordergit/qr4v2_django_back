@@ -17,6 +17,8 @@ class CustomUser(AbstractUser):
     businessentity = models.ForeignKey(
         "multistore.BusinessEntity",on_delete=models.CASCADE,null=True
     )
+    outlet = models.ForeignKey("multistore.Outlet",on_delete=models.CASCADE,null=True,blank=True)
+
     def __str__(self) -> str:
         return self.email
     
