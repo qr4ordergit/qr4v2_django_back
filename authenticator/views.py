@@ -48,7 +48,7 @@ def silent_token_refresh(refresh_token):
                     'expires_in': expires_in_seconds,
                     'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S')
                 }
-                print("Access_data", data)
+                
                 return JsonResponse({'success': True, 'data': data})
     except cognito_client.exceptions.UserNotFoundException: 
         return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found."})
@@ -196,7 +196,6 @@ class UserLogin(APIView):
                 if '@'not in username_or_email:
                     password = f'Qr4order@{password}'
                 
-
                 response = cognito_client.initiate_auth(
                     ClientId=client_id,
                     AuthFlow='USER_PASSWORD_AUTH',
@@ -244,7 +243,7 @@ class UserLogin(APIView):
                             'user_id':get_user_details,
                             'user_type':user_type,
                             # 'user_identity': str(get_user_details.identity), 
-                            # 'email':str(get_user_details),                         
+                            'email':username_or_email,                         
                             'access_token': access_token,
                             'refresh_token': refresh_token}
                     return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
