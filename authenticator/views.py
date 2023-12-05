@@ -15,6 +15,7 @@ from .utils import (
 )
 from .models import UserLevel,CustomUser
 from multistore.models import BusinessEntity
+from multistore.custom_authetication import CustomAuthentication
 from .token_decoder import get_cognito_public_keys, verify_cognito_access_token, silent_token_refresh
 
 
@@ -84,12 +85,12 @@ class EmployeeRegistration(APIView):
 
     def post(self, request):
         try:
-            user_name = request.POST.get('username')
+            username = request.POST.get('username')
             role = request.POST.get('role')
             password = request.POST.get('password')
             businessentity = request.POST.get('businessentity')
             
-            placeholder_email = f'{user_name}@example.com'
+            placeholder_email = f'{username}@example.com'
             password = f'Qr4order@{password}'
 
             check_business = self.businessentity_data(businessentity)
@@ -111,7 +112,7 @@ class EmployeeRegistration(APIView):
 
             response = cognito_client.admin_create_user(
                 UserPoolId=user_pool_id,
-                Username=user_name,
+                Username=username,
                 TemporaryPassword=password,
                 UserAttributes=user_attributes,
                 ForceAliasCreation=False,
@@ -363,7 +364,7 @@ class UserPasswordUpdate(APIView):
         
 
 class DeleteUser(APIView):
-
+    authentication_classes = [CustomAuthentication]
     def post(self, request):
         username = request.POST.get('username')
         try:
