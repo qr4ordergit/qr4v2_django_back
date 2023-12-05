@@ -1,5 +1,5 @@
 from django.db import models
-from string import digits,hexdigits,ascii_uppercase
+from string import digits,hexdigits,ascii_uppercase,ascii_letters
 from random import choices
 import uuid
 import time
@@ -43,11 +43,20 @@ class BusinessEntity(CommonFields):
     def __str__(self) -> str:
         return self.name
 
+
+def generate_outlet_code():
+    code = ''.join(choices(ascii_letters+digits,k = 8))
+    if Outlet.objects.filter(outlet_code=code).exists():
+        return generate_code
+    return code
+
+
  
 #restaurant
 class Outlet(CommonFields):
     id = models.BigAutoField(primary_key = True)
     name = models.CharField(max_length=255)
+    outlet_code = models.CharField(max_length=100,default=generate_outlet_code)
     description = models.TextField(default='',null=True,blank=True)
     businessentity = models.ForeignKey(BusinessEntity,on_delete=models.CASCADE,null=True,blank=True)
     logo = models.ImageField(upload_to="logo/",null=True,blank=True)
@@ -56,10 +65,6 @@ class Outlet(CommonFields):
     address = models.CharField(max_length=100,null=True)
 
 
-    @property
-    def get_all_user_detail(self):
-        return None
-    
     def __str__(self) -> str:
         return self.name
 
