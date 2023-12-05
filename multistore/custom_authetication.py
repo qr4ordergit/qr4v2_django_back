@@ -7,20 +7,16 @@ from rest_framework.response import Response
 from authenticator.models import CustomUser
 
 
-
 def idetify_user(name_or_email):
     try:
         user = CustomUser.objects.get(email=name_or_email)
     except Exception as e:
         user = None
-
     try:
         user = CustomUser.objects.get(username=name_or_email)
     except Exception as e:
         user = None
     return user
-
-
 
 class CustomAuthentication(BaseAuthentication):
     def authenticate(self, request):

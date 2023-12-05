@@ -9,7 +9,6 @@ from django.urls import reverse
 # class Country(models.Model):
 #     NAME = models.CharField(max_length=250, null=False, blank=False)
 #     LANGUAGE = models.CharField(max_length=250, null=False, blank=False)
-#     is_active = models.BooleanField(default=True)
 
 # class Currency(models.Model):
 #     NAME = models.CharField(max_length=250, null=False, blank=False)   
@@ -23,6 +22,7 @@ from django.urls import reverse
 class CommonFields(models.Model):
     created_at = models.DateTimeField(auto_now_add=True,null=True,blank=True)
     updated_at = models.DateTimeField(auto_now=True,null=True,blank=True)
+
     class Meta: 
         abstract = True
 
@@ -32,27 +32,56 @@ def generate_code():
         return generate_code
     return code
 
+
 class BusinessEntity(CommonFields):
     id = models.BigAutoField(primary_key = True)
     referance = models.CharField(max_length=300,default=generate_code)
     name = models.CharField(max_length=255)
     description = models.TextField(default='',null=True,blank=True)
-    status = models.BooleanField(default=False)
     owner = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="owner",null=True)
-    
     
     def __str__(self) -> str:
         return self.name
 
+ 
+#restaurant
+class Outlet(CommonFields):
+    id = models.BigAutoField(primary_key = True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(default='',null=True,blank=True)
+    businessentity = models.ForeignKey(BusinessEntity,on_delete=models.CASCADE,null=True,blank=True)
+    logo = models.ImageField(upload_to="logo/",null=True,blank=True)
+    phone_number = models.CharField(max_length=100,null=True)
+    qr_code = models.ImageField(upload_to="qr_code/",default="",null=True)
+    address = models.CharField(max_length=100,null=True)
+
+
+    @property
+    def get_all_user_detail(self):
+        return None
+    
+    def __str__(self) -> str:
+        return self.name
+
+
+#restaurant Table
 class QrSingature(CommonFields):
-    businessentity = models.ForeignKey(BusinessEntity, on_delete=models.CASCADE, related_name="restauranttable_restaurant",null=True, blank=True)
+    outlet = models.ForeignKey(Outlet, on_delete=models.CASCADE, related_name="outlet",null=True, blank=True)
     table_name = models.CharField(max_length=20,null=True, blank=True)
-    qr_code = models.FileField(null=True, blank=True)
+    qr_code = models.FileField(default="",upload_to="qrsingature/",null=True, blank=True)
     description = models.TextField(default='', null=True, blank=True)
     is_pin_enable = models.BooleanField(default=False)
     direct_order_table = models.BooleanField(default=False)
     is_online_order = models.BooleanField(default=False)
     bill_type = models.BooleanField(default=False)
+    waiter = models.ForeignKey(CustomUser,on_delete=models.CASCADE,null=True,blank=True)
+
+    @property
+    def is_waiter_assigned(self):
+        if self.waiter != None:
+            return True
+        else:
+            return False
     
     def __str__(self) -> str:
         return self.table_name
@@ -80,7 +109,6 @@ class OrderSession(CommonFields):
     amount = models.FloatField(default=None, null=True, blank=True)
     total_tip = models.FloatField(default=0)
 
-
 #order_summary
 class OrderDetails(CommonFields):
     table_session = models.ForeignKey(OrderSession, on_delete=models.CASCADE, related_name="session_order_details")
@@ -88,7 +116,6 @@ class OrderDetails(CommonFields):
     item_price = models.FloatField()
     item_unit = models.CharField(max_length=10,default="")
     order_serial_no = models.IntegerField()
-
 
     def __str__(self) -> str:
         return self.item_total_price + self.item_price 

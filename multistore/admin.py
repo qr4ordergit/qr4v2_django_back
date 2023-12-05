@@ -5,5 +5,5 @@ from multistore.models import *
 
 @admin.register(BusinessEntity)
 class RestaurantAdmin(admin.ModelAdmin):
-    list_display = ['name','description','status','updated_at','created_at']
+    list_display = ['name','description','updated_at','created_at']
     readonly_fields = ('referance',)

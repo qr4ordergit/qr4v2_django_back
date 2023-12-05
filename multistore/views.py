@@ -10,7 +10,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from . serializers import ( 
     BusinessEntityRegistrationSerializer,
-    QrSingatureSerializer
+    QrSingatureSerializer,
+    OutletSerializer
 )
 from multistore.models import BusinessEntity
 from authenticator.models import CustomUser
@@ -18,6 +19,98 @@ from rest_framework.authentication import  BasicAuthentication
 import json
 from rest_framework.permissions import IsAuthenticated
 from multistore.custom_authetication import CustomAuthentication
+
+
+#add check list if user is owner so then only create business Entity and get details.
+class BusinessEntityRegistrations(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CustomAuthentication]
+    serializer_class = BusinessEntityRegistrationSerializer
+
+    def owner_check(self,user_id:int):
+        try:
+            user_obj = CustomUser.objects.get(id=user_id)
+        except:
+            user_obj = None
+        return  user_obj
+
+    def get(self,request,owner_id):
+        business_entity = BusinessEntity.objects.filter(owner__id=owner_id)
+        business_entity = BusinessEntityRegistrationSerializer(business_entity,many=True).data
+        return Response({"data":business_entity},status=status.HTTP_200_OK)
+
+    def post(self,request):
+        checking = BusinessEntityRegistrationSerializer(data=request.data)
+
+        if checking.is_valid():
+            owner = checking.validated_data.get('owner')
+            custom_user = self.owner_check(owner)
+            if custom_user == None:
+                return Response({
+                    "message":"owner not exits"
+                })
+            name = checking.validated_data.get('name')
+            description = checking.validated_data.get('description')
+            bussiness = BusinessEntity(
+                name = name,
+                description=description,
+                owner = custom_user,
+            )
+            bussiness.save()
+            return Response({"message":"data saved successfully"})
+        return Response({"message":checking.errors})
+
+
+class OutletRegistrationView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CustomAuthentication]
+    serializer_class = OutletSerializer
+    
+
+    def post(self,request):
+        validation = self.serializer_class(data=request.data)
+        if validation.is_valid():
+
+            return Response({"message":"Outlet Information Saved"})
+
+        return Response({"message":validation.errors})
+
+
+
+class QrSingature(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CustomAuthentication]
+    serializer_class = QrSingatureSerializer
+
+    def get_(self,user_id:int):
+       
+        return Response({})
+
+    def post(self,request,*args,**kwargs):
+        print("data")
+
+        return Response({})
+
+    def put(self,request,id:int):
+        print(id,"put")
+
+        return Response({
+
+        })
+    
+    def patch(self,request,id:int):
+        print("patch",id)
+        return Response({})
+
+    def delete(self,request,id:int):
+        print(id,"delete")
+        return Response({})    
+
+
+
+
+
+
 
 class LanguageDetails(APIView):
     def checkLang(self,lang):
@@ -105,68 +198,5 @@ class LanguageCrud(APIView):
         except Exception as e:
             return JsonResponse({'success': False, 'message': 'Error creating and updating translations'},http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class BusinessEntityRegistrations(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [CustomAuthentication]
-    serializer_class = BusinessEntityRegistrationSerializer
 
-    def owner_check(self,user_id:int):
-        try:
-            user_obj = CustomUser.objects.get(id=user_id)
-        except:
-            user_obj = None
-        return  user_obj
 
-    def get(self,request,owner_id):
-        business_entity = BusinessEntity.objects.filter(owner__id=owner_id)
-        business_entity = BusinessEntityRegistrationSerializer(business_entity,many=True).data
-        return Response({"data":business_entity},status=status.HTTP_200_OK)
-
-    def post(self,request):
-        checking = BusinessEntityRegistrationSerializer(data=request.data)
-        if checking.is_valid():
-            owner = checking.validated_data.get('owner')
-            custom_user = self.owner_check(owner)
-            if custom_user == None:
-                return Response({
-                    "message":"owner not exits"
-                })
-            name = checking.validated_data.get('name')
-            description = checking.validated_data.get('description')
-            bussiness = BusinessEntity(
-                name = name,
-                description=description,
-                owner = custom_user, 
-            )
-            bussiness.save()
-            return Response({"message":"data saved successfully"})
-        return Response({"message":checking.errors})
-    
-class QrSingature(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [CustomAuthentication]
-    serializer_class = QrSingatureSerializer
-
-    def get_(self,user_id:int):
-       
-        return Response({})
-
-    def post(self,request,*args,**kwargs):
-        print("data")
-
-        return Response({})
-
-    def put(self,request,id:int):
-        print(id,"put")
-
-        return Response({
-
-        })
-    
-    def patch(self,request,id:int):
-        print("patch",id)
-        return Response({})
-
-    def delete(self,request,id:int):
-        print(id,"delete")
-        return Response({})    

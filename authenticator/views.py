@@ -195,11 +195,12 @@ class UserLogin(APIView):
                     get_user_id = self.get_user(username_or_email) 
                     
                     if  username_or_email == 'test': 
-                        user_type = 'Manager' 
+                        user_type = 'Manager'
                     elif username_or_email == 'test2':
                         user_type = 'Waiter'
                     else:
                         user_type = 'Owner'
+                    
 
                     user_data = {'expiration_time':expiration_time,'user_type': user_type, 'email':username_or_email,'user_id':get_user_id}
                     data = {'user_data': user_data,'access_token': access_token,
