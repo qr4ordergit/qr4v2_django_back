@@ -22,8 +22,8 @@ class CustomAuthentication(BaseAuthentication):
     def authenticate(self, request):
         header = request.headers.get('Authorization',None)
         if header is None:
-            return AuthenticationFailed("header is missing")
-        try:
+            return Response({'success':False, 'status_code':400 , 'message': "header is missing"})
+        try: 
             public_key = get_cognito_public_keys()
             verify = verify_cognito_access_token(header,public_key)
             username_or_email = verify['username']
