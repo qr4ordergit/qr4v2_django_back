@@ -29,7 +29,7 @@ class CustomAuthentication(BaseAuthentication):
             username_or_email = verify['username']
 
         except Exception as e:
-            return AuthenticationFailed(e)
+            return Response({'success':False, 'status_code':400 , 'message': "Token Excpiered" })
             
         finally:
             user = idetify_user(username_or_email)
