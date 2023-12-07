@@ -31,13 +31,14 @@ class CustomUserAdmin(admin.ModelAdmin):
     readonly_fields = ('is_verify','identity')
 
 
-@admin.register(StaffPermissions)
-class StaffPermissionsAdmin(admin.ModelAdmin):
-    list_display = ['user','bussiness_entity']
+# @admin.register(StaffPermissions)
+# class StaffPermissionsAdmin(admin.ModelAdmin):
+#     list_display = ['user','bussiness_entity']
 
 
 class PermissionAdmin(BaseReadOnlyAdminMixin,admin.ModelAdmin):
-    list_display = ['name']
+    list_display = ['name','user_level']
+
 admin.site.register(Permission,PermissionAdmin)
 
 

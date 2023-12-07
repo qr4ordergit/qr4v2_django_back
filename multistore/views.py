@@ -66,14 +66,15 @@ class OutletRegistrationView(APIView):
     authentication_classes = [CustomAuthentication]
     serializer_class = OutletSerializer
     
-
     def post(self,request):
-        validation = self.serializer_class(data=request.data)
-        if validation.is_valid():
+        serilizer = self.serializer_class(data=request.data)
+        if serilizer.is_valid():
+            name = serilizer.validated_data.get('name')
+            
 
             return Response({"message":"Outlet Information Saved"})
 
-        return Response({"message":validation.errors})
+        return Response({"message":serilizer.errors})
 
 
 

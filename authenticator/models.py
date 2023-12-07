@@ -27,8 +27,17 @@ class Operation(models.Model):
     def __str__(self) -> str:
         return self.name
 
+Permission_Type = ( 
+    ("COMMAN", "COMMAN"), 
+    ("CUSTOM", "CUSTOM"), 
+) 
+
 class Permission(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,help_text="permission_name")
+    operation = models.ManyToManyField(Operation,null=True,blank=True)
+    outlet = models.ManyToManyField("multistore.Outlet",null=True)
+    user_level = models.ForeignKey(UserLevel,on_delete=models.DO_NOTHING,null=True,blank=True)
+    permission_type = models.CharField(max_length=100,default="COMMAN")
     
     def save(self, *args, **kwargs):
         self.name = self.name.replace(' ', '_')
@@ -42,6 +51,8 @@ class StaffPermissions(models.Model):
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,null=True,blank=True,related_name="permisions")
     operation = models.ManyToManyField(Operation)
     bussiness_entity = models.ForeignKey("multistore.BusinessEntity",on_delete=models.CASCADE,null=True,blank=True)
+
+
     def __str__(self) -> str:
         return self.name
 
@@ -52,6 +63,8 @@ class GroupPermission(models.Model):
 
     def __str__(self) -> str:
         return self.name
+    
+
 
 
 
