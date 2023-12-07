@@ -16,6 +16,7 @@ from .utils import (
 )
 from .models import *
 from multistore.models import *
+from authenticator.serializers import *
 from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
 
 
@@ -37,29 +38,33 @@ def silent_token_refresh(refresh_token):
             }
         )
 
-        if 'AuthenticationResult' in response:              
+        if 'AuthenticationResult' in response:
             access_token = response['AuthenticationResult']['AccessToken']
-            expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
-            new_refresh_token = response['AuthenticationResult'].get('RefreshToken')
+            expires_in_seconds = response['AuthenticationResult'].get(
+                'ExpiresIn')
+            new_refresh_token = response['AuthenticationResult'].get(
+                'RefreshToken')
             expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
 
-            data ={
+            data = {
                 'access_token': access_token,
                 'expires_in': expiration_time.strftime('%Y-%m-%d %H:%M:%S')
             }
 
             public_keys = get_cognito_public_keys()
-            decoded_token = verify_cognito_access_token(access_token, public_keys)
+            decoded_token = verify_cognito_access_token(
+                access_token, public_keys)
 
             if decoded_token:
                 return JsonResponse({'success': True, 'data': data})
         else:
             return Response({'success': False, 'message': 'User Not Authenticated.'})
-    except cognito_client.exceptions.UserNotFoundException: 
-        return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found."})
+    except cognito_client.exceptions.UserNotFoundException:
+        return Response({'success': False, 'status_code': status.HTTP_404_NOT_FOUND, 'message': "User not found."})
     except ClientError as e:
-        return Response({'success': False, 'data':str(e)})
-    
+        return Response({'success': False, 'data': str(e)})
+
+
 class OwnerRegistration(APIView):
 
     def post(self, request):
@@ -80,46 +85,46 @@ class OwnerRegistration(APIView):
             )
 
             add_owner_to_group = cognito_client.admin_add_user_to_group(
-                UserPoolId = user_pool_id,
-                Username = email,
-                GroupName = 'Owner',
-                )
-            
+                UserPoolId=user_pool_id,
+                Username=email,
+                GroupName='Owner',
+            )
+
             try:
                 owner, created = UserLevel.objects.get_or_create(name='OWNER')
-                print(owner,"user level saved")
-                user_registration(email,password,owner)
+                print(owner, "user level saved")
+                user_registration(email, password, owner)
             except Exception as e:
                 print("Failed to Registerations in Django User Model")
-           
+
             return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': response, 'message': 'User signup successful. Confirm signup with the code sent to your email.'})
         except cognito_client.exceptions.UsernameExistsException:
             return Response({'success': False, 'message': 'Username Already Exists.'})
         except cognito_client.exceptions.InvalidPasswordException:
-            return JsonResponse({'success': False,'message': 'Invalid Password.'})
+            return JsonResponse({'success': False, 'message': 'Invalid Password.'})
         except ClientError as e:
             print(f"User signup failed =>> {e}")
             # delete_user = cognito_client.admin_delete_user(
             #                 UserPoolId=user_pool_id,
             #                 Username=email )
             return JsonResponse({'success': False, 'data': str(e), 'message': 'User creation failed. Please check your input and try again.'})
-    
-class EmployeeRegistration(APIView): 
 
-    def check_user_level_exits(self,role):
+
+class EmployeeRegistration(APIView):
+
+    def check_user_level_exits(self, role):
         try:
             user_level = UserLevel.objects.get(name=role)
             return user_level
         except:
             return False
-        
-    def get_outlet_code(self,code):
+
+    def get_outlet_code(self, code):
         try:
             object = Outlet.objects.get(outlet_code=code)
             return object
         except:
             return None
-    
 
     def post(self, request):
         try:
@@ -127,22 +132,22 @@ class EmployeeRegistration(APIView):
             role = request.POST.get('role')
             password = request.POST.get('password')
             outletcode = request.POST.get('outletcode')
-            
+
             placeholder_email = f'{username}@example.com'
             password = f'Qr4order@{password}'
 
             outlet_obj = self.get_outlet_code(outletcode)
             if outlet_obj == None:
                 return Response({
-                    "message":"outlet not exits"
+                    "message": "outlet not exits"
                 })
 
             user_level_check = self.check_user_level_exits(role)
             if user_level_check == False:
                 return Response({
-                    "message":"given role not exits"
+                    "message": "given role not exits"
                 })
-            
+
             user_attributes = [
                 {'Name': 'email', 'Value': placeholder_email},
                 {'Name': 'email_verified', 'Value': 'True'},
@@ -159,7 +164,7 @@ class EmployeeRegistration(APIView):
             user_response = response['ResponseMetadata']['HTTPStatusCode']
 
             add_user_to_group = cognito_client.admin_add_user_to_group(
-                UserPoolId=user_pool_id, 
+                UserPoolId=user_pool_id,
                 Username=role,
                 GroupName='Staff',
             )
@@ -167,8 +172,9 @@ class EmployeeRegistration(APIView):
             group_responce = add_user_to_group['ResponseMetadata']['HTTPStatusCode']
 
             if group_responce == 200 and user_response == 200:
-                
-                user_registration(placeholder_email,password,user_level_check)
+
+                user_registration(placeholder_email,
+                                  password, user_level_check)
 
                 return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': response, "message": "User Createtion successful."})
 
@@ -182,25 +188,30 @@ class EmployeeRegistration(APIView):
 
 
 class UserLogin(APIView):
+    serializer_class = Outlet_Serializer
 
-    def get_user(self,usrename):
+    def get_user(self, usrename):
         try:
             user = CustomUser.objects.get(username=usrename)
-            business = BusinessEntity.objects.get(name = user.businessentity)
+            business = BusinessEntity.objects.get(name=user.businessentity)
+
+            return user, business
         except Exception as e:
-            print(e,"error")
+            print(e, "error")
             user = None
             business = None
-        return user, business
+            return user, business
 
     def outlet_list(self, id):
         try:
             user = CustomUser.objects.select_related('outlet').filter(id=id)
-            outlets = Outlet.objects.filter(owner_id__in = Subquery(user.values("pk")))
+            outlets = Outlet.objects.filter(
+                owner_id__in=Subquery(user.values("pk")))
+
+            return outlets
         except Exception as e:
-            print(e,"error")
+            print(e, "error")
             return None
-        return outlets
 
     def post(self, request):
         try:
@@ -211,7 +222,7 @@ class UserLogin(APIView):
 
                 if '@'not in username_or_email:
                     password = f'Qr4order@{password}'
-                
+
                 response = cognito_client.initiate_auth(
                     ClientId=client_id,
                     AuthFlow='USER_PASSWORD_AUTH',
@@ -237,51 +248,59 @@ class UserLogin(APIView):
                 if 'AuthenticationResult' in response:
                     access_token = response['AuthenticationResult']['AccessToken']
                     refresh_token = response['AuthenticationResult']['RefreshToken']
-                    expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
+                    expires_in_seconds = response['AuthenticationResult'].get(
+                        'ExpiresIn')
 
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
-                    # silent_token_refresh(refresh_token)                  
+                    # silent_token_refresh(refresh_token)
                     get_user_details = self.get_user(username_or_email)
                     user, business = get_user_details
-                    # outlet_data = self.outlet_list(get_user_details.id)
-                  
-                    if  username_or_email == 'test': 
-                        user_type = 'Manager' 
+                    outlet_data = self.outlet_list(user.id)
+
+                    if username_or_email == 'test':
+                        user_type = 'Manager'
                     elif username_or_email == 'test2':
                         user_type = 'Waiter'
                     else:
                         user_type = 'Owner'
 
                     if str(user.identity) != 'OWNER':
-                        
+
                         data = {
-                            'expiration_time':expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
-                            'email':user.email,
-                            'user_id':user.id,
-                            'user_type':str(user.identity),                
+                            'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            'email': user.email,
+                            'user_id': user.id,
+                            'user_type': str(user.identity),
                             'access_token': access_token,
                             'refresh_token': refresh_token
                         }
                     else:
                         data = {
-                            'expiration_time':expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
-                            'email':user.email,
-                            'user_id':user.id,  
-                            'user_type':str(user.identity), 
-                            'business_id':business.id,              
-                            'business_name':business.name,              
-                            'business_referance':business.referance,              
-                            'business_description':business.description,             
+                            'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            'email': user.email,
+                            'user_id': user.id,
+                            'user_type': str(user.identity),
+                            'business_id': business.id,
+                            'business_name': business.name,
+                            'business_referance': business.referance,
+                            'business_description': business.description,
                             'access_token': access_token,
                             'refresh_token': refresh_token
                         }
-                        
-                    return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
+
+                        outlet_serializer = Outlet_Serializer(
+                            outlet_data, many=True).data
+                        dash_info = {
+                            "outlet_list": outlet_serializer,
+                            "user_info": data,
+
+                        }
+                    return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': dash_info, 'message': 'Authenticated User.'})
                 else:
                     return Response({'success': False, 'message': 'Access token verification failed.'})
-            
-            return Response({'success': False, 'message': 'Incorrect username or password.'})    
-        
+
+            return Response({'success': False, 'message': 'Incorrect username or password.'})
+
         except cognito_client.exceptions.UserNotConfirmedException:
             return Response({'success': False, 'verified': False, 'message': 'User not Verified.'})
         except cognito_client.exceptions.NotAuthorizedException:
@@ -305,7 +324,7 @@ class UserAuthentication(APIView):
             )
             verifed = response['ResponseMetadata']['HTTPStatusCode']
             if verifed == 200:
-                user_verify = CustomUser.objects.get(email = email)
+                user_verify = CustomUser.objects.get(email=email)
                 user_verify.is_verify = True
                 user_verify.save()
 
@@ -329,9 +348,9 @@ class ResendConfirmationCode(APIView):
             )
 
             return Response({'success': True, 'message': 'Confirmation code resent successfully.'})
-        
+
         except cognito_client.exceptions.UserNotFoundException:
-            return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
+            return Response({'success': False, 'status_code': status.HTTP_404_NOT_FOUND, 'message': "User not found. Please check the username and try again."})
         except ClientError as e:
             print(f"Error resending confirmation code: {e}")
             return Response({'success': False, 'message': str(e)})
@@ -351,7 +370,7 @@ class account_recovery(APIView):
             return Response({'success': True, 'status_code': status.HTTP_200_OK, 'message': 'Password recovery initiated successfully. Check your email for instructions."'})
 
         except cognito_client.exceptions.UserNotFoundException:
-            return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found. Please check the username and try again."})
+            return Response({'success': False, 'status_code': status.HTTP_404_NOT_FOUND, 'message': "User not found. Please check the username and try again."})
         except cognito_client.exceptions.NotAuthorizedException:
             return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
         except cognito_client.exceptions.LimitExceededException:
@@ -359,6 +378,7 @@ class account_recovery(APIView):
         except Exception as e:
             print(f"An error occurred: {e}")
             return Response({'success': False, 'data': response, 'message': [e]})
+
 
 class UserDetailsUpdate(APIView):
     def post(self, request):
@@ -379,18 +399,17 @@ class UserDetailsUpdate(APIView):
                 )
 
                 return Response({'success': True, 'message': "User Details Updated Successfully."})
-            
-            return Response({'success': False, 'status_code': status.HTTP_400_BAD_REQUEST ,'message': "Request Failed. Please try again later."})
+
+            return Response({'success': False, 'status_code': status.HTTP_400_BAD_REQUEST, 'message': "Request Failed. Please try again later."})
         except cognito_client.exceptions.InvalidParameterException:
             return Response({'success': False, 'message': f"Invalid Parameter, Please try again."})
         except cognito_client.exceptions.UserNotFoundException:
-            return Response({'success': False, 'status_code': status.HTTP_404_NOT_FOUND,'message': f"User Not Found, Please try again."})
+            return Response({'success': False, 'status_code': status.HTTP_404_NOT_FOUND, 'message': f"User Not Found, Please try again."})
         # except cognito_client.exceptions.LimitExceededException:
         #     return Response({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': f"Internal Server Error, Please try again."})
         except Exception as e:
             print(f"An error occurred: {e}")
             return Response({'success': False, 'message': str(e)})
-
 
 
 class AccountRecovery(APIView):
@@ -402,30 +421,30 @@ class AccountRecovery(APIView):
         try:
             if '@' in username:
                 responce = cognito_client.forgot_password(
-                    ClientId = client_id,
-                    Username = username,
+                    ClientId=client_id,
+                    Username=username,
                 )
-                return Response({'success': True,'data':responce, 'message': 'Confirm with the code sent to your email.'})
-  
+                return Response({'success': True, 'data': responce, 'message': 'Confirm with the code sent to your email.'})
+
             if code:
                 responce = cognito_client.confirm_forgot_password(
-                    ClientId = client_id,
-                    Username = username,
-                    ConfirmationCode = code,
-                    Password = password,
+                    ClientId=client_id,
+                    Username=username,
+                    ConfirmationCode=code,
+                    Password=password,
                 )
-                return Response({'success': True,'data':responce, 'message': 'Password Changed.'})
-        
+                return Response({'success': True, 'data': responce, 'message': 'Password Changed.'})
+
         except cognito_client.exceptions.NotAuthorizedException:
             return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
         except cognito_client.exceptions.LimitExceededException:
             return Response({'success': False, 'status_code': status.HTTP_503_SERVICE_UNAVAILABLE, 'message': f"Internal Server Error, Please try again."})
         except cognito_client.exceptions.UserNotFoundException:
-            return Response({'success': False, 'status_code': status.HTTP_404_NOT_FOUND,'message': f"User Not Found, Please try again."})
+            return Response({'success': False, 'status_code': status.HTTP_404_NOT_FOUND, 'message': f"User Not Found, Please try again."})
         except cognito_client.exceptions as e:
             print(f"An error occurred: {e}")
             return Response({'success': False, 'message': str(e)})
-        
+
 
 class UserPasswordUpdate(APIView):
 
@@ -439,27 +458,27 @@ class UserPasswordUpdate(APIView):
             password = f'Qr4order@{old_password}'
 
             access_token = cognito_client.initiate_auth(
-                    ClientId=client_id,
-                    AuthFlow='USER_PASSWORD_AUTH',
-                    AuthParameters={
-                        'USERNAME': username,
-                        'PASSWORD': password
-                    }
-                )
-            
+                ClientId=client_id,
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    'USERNAME': username,
+                    'PASSWORD': password
+                }
+            )
+
             if 'AuthenticationResult' in access_token:
-                    new_password = f'Qr4order@{new_password}'
-                    access_token = access_token['AuthenticationResult']['AccessToken']
-                    responce = cognito_client.change_password(
-                        PreviousPassword = password,
-                        ProposedPassword = new_password,    
-                        AccessToken = access_token,
-                    )
-                    return JsonResponse({'success': True,'status_code': status.HTTP_200_OK, 'data':responce, 'message': 'Password Changed.'})
-            return Response({'success': False,  'status_code': status.HTTP_400_BAD_REQUEST ,'message': 'Parameters Mismatch.'})
+                new_password = f'Qr4order@{new_password}'
+                access_token = access_token['AuthenticationResult']['AccessToken']
+                responce = cognito_client.change_password(
+                    PreviousPassword=password,
+                    ProposedPassword=new_password,
+                    AccessToken=access_token,
+                )
+                return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': responce, 'message': 'Password Changed.'})
+            return Response({'success': False,  'status_code': status.HTTP_400_BAD_REQUEST, 'message': 'Parameters Mismatch.'})
         except cognito_client.exceptions.NotAuthorizedException:
-            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."}) 
-        
+            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
+
 
 class DeleteUser(APIView):
 
@@ -467,15 +486,14 @@ class DeleteUser(APIView):
         username = request.POST.get('username')
         try:
             delete_user = cognito_client.admin_delete_user(
-                                UserPoolId=user_pool_id,
-                                Username=username 
-                                )
-            print("User deleted",delete_user)
-            return JsonResponse({'success': True,'status_code': status.HTTP_200_OK, 'message': f'User {username} Deleted.'})
-        
+                UserPoolId=user_pool_id,
+                Username=username
+            )
+            print("User deleted", delete_user)
+            return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'message': f'User {username} Deleted.'})
+
         except cognito_client.exceptions.NotAuthorizedException:
-            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."}) 
+            return Response({'success': False, 'status_code': status.HTTP_401_UNAUTHORIZED, 'message': "User is not authorized to initiate password recovery. Please contact support."})
         except cognito_client.exceptions as e:
             print(f"An error occurred: {e}")
             return Response({'success': False, 'message': str(e)})
-
