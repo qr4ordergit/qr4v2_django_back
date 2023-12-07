@@ -276,7 +276,7 @@ class UserLogin(APIView):
                             'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
                             'email': user.email,
                             'user_id': user.id,
-                            'user_type': str(user.identity),
+                            'user_type':user_type,
                             'outlet_exists': True if outlet else False,
                             'access_token': access_token,
                             'refresh_token': refresh_token
