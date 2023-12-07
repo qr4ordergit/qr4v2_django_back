@@ -261,7 +261,11 @@ class UserLogin(APIView):
                     outlet = Outlet.objects.filter(owner=user)
                     if username_or_email == 'test':
                         user_type = 'Manager'
+                        data = {'user_type': user_type}
+                        return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                     elif username_or_email == 'test2':
+                        data = {'user_type': user_type}
+                        return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                         user_type = 'Waiter'
                     else:
                         user_type = 'Owner'
