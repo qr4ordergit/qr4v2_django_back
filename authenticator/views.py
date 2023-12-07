@@ -202,17 +202,17 @@ class UserLogin(APIView):
             business = None
             return user, business
 
-    def outlet_list(self, id):
-        try:
-            if id != None:
-                user = CustomUser.objects.select_related('outlet').filter(id=id)
-                outlets = Outlet.objects.filter(
-                    owner_id__in=Subquery(user.values("pk")))
+    # def outlet_list(self, id):
+    #     try:
+    #         if id != None:
+    #             user = CustomUser.objects.select_related('outlet').filter(id=id)
+    #             outlets = Outlet.objects.filter(
+    #                 owner_id__in=Subquery(user.values("pk")))
 
-                return outlets
-        except Exception as e:
-            print(e, "error")
-            return None
+    #             return outlets
+    #     except Exception as e:
+    #         print(e, "error")
+    #         return None
 
     def post(self, request):
         try:
