@@ -256,7 +256,7 @@ class UserLogin(APIView):
                     # silent_token_refresh(refresh_token)
                     get_user_details = self.get_user(username_or_email)
                     user, business, outlet = get_user_details
-                    outlet_data = self.outlet_list(user.id)
+                    # outlet_data = self.outlet_list(user.id)
 
                     if username_or_email == 'test':
                         user_type = 'Manager'
@@ -291,14 +291,14 @@ class UserLogin(APIView):
                             'refresh_token': refresh_token
                         }
 
-                        outlet_serializer = Outlet_Serializer(
-                            outlet_data, many=True).data
-                        print("-=-=-=-==-=-=",outlet_serializer)
-                        dash_info = {
-                            "outlet_list": outlet_serializer,
-                            "user_info": data,
+                        # outlet_serializer = Outlet_Serializer(
+                        #     outlet_data, many=True).data
+                        # print("-=-=-=-==-=-=",outlet_serializer)
+                        # dash_info = {
+                        #     "outlet_list": outlet_serializer,
+                        #     "user_info": data,
 
-                        }
+                        # }
                     return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                 else:
                     return Response({'success': False, 'message': 'Access token verification failed.'})
