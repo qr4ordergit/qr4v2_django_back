@@ -1,5 +1,6 @@
 from django.urls import include, path
 from .views import *
+from .views2 import PermissionView
 
 urlpatterns = [
     path('refresh/token/', silent_token_refresh),
@@ -13,4 +14,5 @@ urlpatterns = [
     path('update/password/', UserPasswordUpdate.as_view(), name='user-forgot-password'),
     path('delete/user/', DeleteUser.as_view(), name='delete-user'),
     
+    path('api/permission',PermissionView.as_view(),name="permission")
 ]

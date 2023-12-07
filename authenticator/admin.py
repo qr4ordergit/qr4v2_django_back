@@ -4,6 +4,7 @@ from .models import (
      GroupPermission
 )
 from django.contrib.auth.models import Group
+
 admin.site.unregister(Group)
 
 # Register your models here.
@@ -31,9 +32,9 @@ class CustomUserAdmin(admin.ModelAdmin):
     readonly_fields = ('is_verify','identity')
 
 
-# @admin.register(StaffPermissions)
-# class StaffPermissionsAdmin(admin.ModelAdmin):
-#     list_display = ['user','bussiness_entity']
+@admin.register(StaffPermissions)
+class StaffPermissionsAdmin(admin.ModelAdmin):
+    list_display = ['user',]
 
 
 class PermissionAdmin(BaseReadOnlyAdminMixin,admin.ModelAdmin):

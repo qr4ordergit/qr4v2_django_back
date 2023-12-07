@@ -24,6 +24,7 @@ class CustomUser(AbstractUser):
     
 class Operation(models.Model):
     name = models.CharField(max_length=100)
+    
     def __str__(self) -> str:
         return self.name
 
@@ -36,7 +37,7 @@ class Permission(models.Model):
     name = models.CharField(max_length=100,help_text="permission_name")
     operation = models.ManyToManyField(Operation,null=True,blank=True)
     outlet = models.ManyToManyField("multistore.Outlet",null=True)
-    user_level = models.ForeignKey(UserLevel,on_delete=models.DO_NOTHING,null=True,blank=True)
+    user_level = models.ForeignKey(UserLevel,on_delete=models.DO_NOTHING,null=True,blank=True,related_name="user_level_get")
     permission_type = models.CharField(max_length=100,default="COMMAN")
     
     def save(self, *args, **kwargs):
@@ -50,8 +51,7 @@ class Permission(models.Model):
 class StaffPermissions(models.Model):
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,null=True,blank=True,related_name="permisions")
     operation = models.ManyToManyField(Operation)
-    bussiness_entity = models.ForeignKey("multistore.BusinessEntity",on_delete=models.CASCADE,null=True,blank=True)
-
+    user_permission = models.ManyToManyField(Permission)
 
     def __str__(self) -> str:
         return self.name
