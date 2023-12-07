@@ -50,6 +50,7 @@ class Outlet(CommonFields):
     phone_number = models.CharField(max_length=100,null=True)
     qr_code = models.ImageField(upload_to="qr_code/",default="",null=True)
     address = models.CharField(max_length=100,null=True)
+    owner = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="user_owner",null=True)
 
     def __str__(self) -> str:
         return self.name

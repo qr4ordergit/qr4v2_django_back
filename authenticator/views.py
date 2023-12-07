@@ -4,6 +4,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.conf import settings
+from django.db.models import OuterRef, Subquery
 import boto3
 from botocore.exceptions import ClientError
 from rest_framework.views import APIView
@@ -13,8 +14,8 @@ from datetime import datetime, timedelta
 from .utils import (
     user_registration
 )
-from .models import UserLevel,CustomUser
-from multistore.models import Outlet
+from .models import *
+from multistore.models import *
 from .token_decoder import get_cognito_public_keys, verify_cognito_access_token
 
 
@@ -37,19 +38,23 @@ def silent_token_refresh(refresh_token):
         )
 
         if 'AuthenticationResult' in response:              
-                access_token = response['AuthenticationResult']['AccessToken']
-                expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
-                new_refresh_token = response['AuthenticationResult'].get('RefreshToken')
-                expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
+            access_token = response['AuthenticationResult']['AccessToken']
+            expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
+            new_refresh_token = response['AuthenticationResult'].get('RefreshToken')
+            expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
 
-                data ={
-                    'access_token': access_token,
-                    'refresh_token': new_refresh_token,
-                    'expires_in': expires_in_seconds,
-                    'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S')
-                }
-                
+            data ={
+                'access_token': access_token,
+                'expires_in': expiration_time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+
+            public_keys = get_cognito_public_keys()
+            decoded_token = verify_cognito_access_token(access_token, public_keys)
+
+            if decoded_token:
                 return JsonResponse({'success': True, 'data': data})
+        else:
+            return Response({'success': False, 'message': 'User Not Authenticated.'})
     except cognito_client.exceptions.UserNotFoundException: 
         return Response({'success': False,'status_code': status.HTTP_404_NOT_FOUND ,'message': "User not found."})
     except ClientError as e:
@@ -154,7 +159,7 @@ class EmployeeRegistration(APIView):
             user_response = response['ResponseMetadata']['HTTPStatusCode']
 
             add_user_to_group = cognito_client.admin_add_user_to_group(
-                UserPoolId=user_pool_id,
+                UserPoolId=user_pool_id, 
                 Username=role,
                 GroupName='Staff',
             )
@@ -181,10 +186,21 @@ class UserLogin(APIView):
     def get_user(self,usrename):
         try:
             user = CustomUser.objects.get(username=usrename)
+            business = BusinessEntity.objects.get(name = user.businessentity)
         except Exception as e:
             print(e,"error")
             user = None
-        return user
+            business = None
+        return user, business
+
+    def outlet_list(self, id):
+        try:
+            user = CustomUser.objects.select_related('outlet').filter(id=id)
+            outlets = Outlet.objects.filter(owner_id__in = Subquery(user.values("pk")))
+        except Exception as e:
+            print(e,"error")
+            return None
+        return outlets
 
     def post(self, request):
         try:
@@ -224,25 +240,42 @@ class UserLogin(APIView):
                     expires_in_seconds = response['AuthenticationResult'].get('ExpiresIn')
 
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
-                    silent_token_refresh(refresh_token)
+                    # silent_token_refresh(refresh_token)                  
                     get_user_details = self.get_user(username_or_email)
-                    
-                    
+                    user, business = get_user_details
+                    # outlet_data = self.outlet_list(get_user_details.id)
+                  
                     if  username_or_email == 'test': 
                         user_type = 'Manager' 
                     elif username_or_email == 'test2':
                         user_type = 'Waiter'
                     else:
                         user_type = 'Owner'
-                    
 
-                    data = {
-                        'expiration_time':expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
-                        'email':get_user_details.email,
-                        'user_id':get_user_details.id,                
-                        'access_token': access_token,
-                        'refresh_token': refresh_token
-                    }
+                    if str(user.identity) != 'OWNER':
+                        
+                        data = {
+                            'expiration_time':expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            'email':user.email,
+                            'user_id':user.id,
+                            'user_type':str(user.identity),                
+                            'access_token': access_token,
+                            'refresh_token': refresh_token
+                        }
+                    else:
+                        data = {
+                            'expiration_time':expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            'email':user.email,
+                            'user_id':user.id,  
+                            'user_type':str(user.identity), 
+                            'business_id':business.id,              
+                            'business_name':business.name,              
+                            'business_referance':business.referance,              
+                            'business_description':business.description,             
+                            'access_token': access_token,
+                            'refresh_token': refresh_token
+                        }
+                        
                     return JsonResponse({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                 else:
                     return Response({'success': False, 'message': 'Access token verification failed.'})
@@ -270,8 +303,13 @@ class UserAuthentication(APIView):
                 Username=email,
                 ConfirmationCode=confirmation_code
             )
+            verifed = response['ResponseMetadata']['HTTPStatusCode']
+            if verifed == 200:
+                user_verify = CustomUser.objects.get(email = email)
+                user_verify.is_verify = True
+                user_verify.save()
 
-            return JsonResponse({'success': True, 'data': response, 'message': "User Authentication confirmed."})
+                return JsonResponse({'success': True, 'data': response, 'message': "User Authentication confirmed."})
         except cognito_client.exceptions.ExpiredCodeException:
             return Response({'success': False, 'message': 'Invalid code provided, please request a code again.'})
         except ClientError as e:
