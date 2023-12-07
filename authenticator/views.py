@@ -204,11 +204,12 @@ class UserLogin(APIView):
 
     def outlet_list(self, id):
         try:
-            user = CustomUser.objects.select_related('outlet').filter(id=id)
-            outlets = Outlet.objects.filter(
-                owner_id__in=Subquery(user.values("pk")))
+            if id != None:
+                user = CustomUser.objects.select_related('outlet').filter(id=id)
+                outlets = Outlet.objects.filter(
+                    owner_id__in=Subquery(user.values("pk")))
 
-            return outlets
+                return outlets
         except Exception as e:
             print(e, "error")
             return None
