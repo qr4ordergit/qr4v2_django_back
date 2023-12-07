@@ -194,13 +194,14 @@ class UserLogin(APIView):
         try:
             user = CustomUser.objects.get(username=usrename)
             business = BusinessEntity.objects.get(name=user.businessentity)
-            outlet = Outlet.objects.filter(owner = user)
-            return user, business, outlet
+            
+            return user, business
         except Exception as e:
             print(e, "error")
             user = None
             business = None
             return user, business
+
 
     # def outlet_list(self, id):
     #     try:
@@ -255,9 +256,9 @@ class UserLogin(APIView):
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
                     # silent_token_refresh(refresh_token)
                     get_user_details = self.get_user(username_or_email)
-                    user, business, outlet = get_user_details
-                    # outlet_data = self.outlet_list(user.id)
-
+                    user, business = get_user_details
+                    # outlet_data = self.outlet_list(user.id)   
+                    outlet = Outlet.objects.filter(owner=user)
                     if username_or_email == 'test':
                         user_type = 'Manager'
                     elif username_or_email == 'test2':
