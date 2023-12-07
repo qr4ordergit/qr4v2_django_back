@@ -194,8 +194,8 @@ class UserLogin(APIView):
         try:
             user = CustomUser.objects.get(username=usrename)
             business = BusinessEntity.objects.get(name=user.businessentity)
-
-            return user, business
+            outlet = Outlet.objects.filter(owner = user)
+            return user, business, outlet
         except Exception as e:
             print(e, "error")
             user = None
@@ -255,7 +255,7 @@ class UserLogin(APIView):
                     expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
                     # silent_token_refresh(refresh_token)
                     get_user_details = self.get_user(username_or_email)
-                    user, business = get_user_details
+                    user, business, outlet = get_user_details
                     outlet_data = self.outlet_list(user.id)
 
                     if username_or_email == 'test':
@@ -272,6 +272,7 @@ class UserLogin(APIView):
                             'email': user.email,
                             'user_id': user.id,
                             'user_type': str(user.identity),
+                            'outlet_exists': True if outlet else False,
                             'access_token': access_token,
                             'refresh_token': refresh_token
                         }
@@ -281,6 +282,7 @@ class UserLogin(APIView):
                             'email': user.email,
                             'user_id': user.id,
                             'user_type': str(user.identity),
+                            'outlet_exists': True if outlet else False,
                             'business_id': business.id,
                             'business_name': business.name,
                             'business_referance': business.referance,
@@ -291,12 +293,13 @@ class UserLogin(APIView):
 
                         outlet_serializer = Outlet_Serializer(
                             outlet_data, many=True).data
+                        print("-=-=-=-==-=-=",outlet_serializer)
                         dash_info = {
                             "outlet_list": outlet_serializer,
                             "user_info": data,
 
                         }
-                    return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': dash_info, 'message': 'Authenticated User.'})
+                    return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
                 else:
                     return Response({'success': False, 'message': 'Access token verification failed.'})
 
