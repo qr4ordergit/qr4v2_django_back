@@ -194,14 +194,12 @@ class UserLogin(APIView):
         try:
             user = CustomUser.objects.get(username=usrename)
             business = BusinessEntity.objects.get(name=user.businessentity)
-            
             return user, business
         except Exception as e:
             print(e, "error")
             user = None
             business = None
             return user, business
-
 
     # def outlet_list(self, id):
     #     try:
@@ -257,8 +255,9 @@ class UserLogin(APIView):
                     # silent_token_refresh(refresh_token)
                     get_user_details = self.get_user(username_or_email)
                     user, business = get_user_details
-                    # outlet_data = self.outlet_list(user.id)   
+                    # outlet_data = self.outlet_list(user.id)
                     outlet = Outlet.objects.filter(owner=user)
+
                     if username_or_email == 'test':
                         user_type = 'Manager'
                         data = {'user_type': user_type}
@@ -276,7 +275,7 @@ class UserLogin(APIView):
                             'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
                             'email': user.email,
                             'user_id': user.id,
-                            'user_type':user_type,
+                            'user_type': user_type,
                             'outlet_exists': True if outlet else False,
                             'access_token': access_token,
                             'refresh_token': refresh_token
@@ -318,6 +317,64 @@ class UserLogin(APIView):
             print(f"Authentication failed: {e}")
             return Response({'success': False, 'message': str(e)})
 
+class StaffLogin(APIView):
+
+    def post(self, request):
+        username_or_email = request.POST.get('username_or_email')
+        password = request.POST.get('password')
+
+        try:
+            password = f'Qr4order@{password}'
+
+            response = cognito_client.initiate_auth(
+                    ClientId=client_id,
+                    AuthFlow='USER_PASSWORD_AUTH',
+                    AuthParameters={
+                        'USERNAME': username_or_email,
+                        'PASSWORD': password
+                    }
+                )
+            if 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
+                    # This code is essential for authenticating and validating users created by the owner.
+                    session = response['Session']
+                    staff_response = cognito_client.respond_to_auth_challenge(
+                        ClientId=client_id,
+                        ChallengeName='NEW_PASSWORD_REQUIRED',
+                        ChallengeResponses={
+                            'USERNAME': username_or_email,
+                            'NEW_PASSWORD': password
+                        }, Session=session)
+
+                    response = staff_response
+            if 'AuthenticationResult' in response:
+                access_token = response['AuthenticationResult']['AccessToken']
+                refresh_token = response['AuthenticationResult']['RefreshToken']
+                expires_in_seconds = response['AuthenticationResult'].get(
+                    'ExpiresIn')
+
+                expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
+
+                if username_or_email == 'test':
+                        user_type = 'Manager'
+
+                data = {'expires_in': expiration_time,
+                        'user_type': user_type,
+                        'access_token': access_token,
+                            'refresh_token': refresh_token }
+
+                return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
+            else:
+                return Response({'success': False, 'message': 'Access token verification failed.'})
+            
+        except cognito_client.exceptions.UserNotConfirmedException:
+            return Response({'success': False, 'verified': False, 'message': 'User not Verified.'})
+        except cognito_client.exceptions.NotAuthorizedException:
+            return Response({'success': False, 'message': 'Incorrect username or password.'})
+        except ClientError as e:
+            print(f"Authentication failed: {e}")
+            return Response({'success': False, 'message': str(e)})
+
+        
 
 class UserAuthentication(APIView):
 
