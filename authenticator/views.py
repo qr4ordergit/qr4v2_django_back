@@ -193,23 +193,27 @@ class UserLogin(APIView):
     def get_user(self, usrename):
         try:
             user = CustomUser.objects.get(username=usrename)
-            business = BusinessEntity.objects.get(owner=user)
+            try:
+                business = BusinessEntity.objects.get(owner=user)
+            except BusinessEntity.DoesNotExist:
+                print("BusinessEntity not found for user:", user.username)
+                business = None
+                
             if business or user:
-                data = {
-                    
-                    'email': user.email,
-                    'user_id': user.id,
-                    'user_type': str(user.identity) if hasattr(user, 'identity') else None,
-                    'business_id': business.id,
-                    'business_name': business.name,
-                    'business_referance': business.referance,
-                    'business_description': business.description,
+                data = {   
+                'email': user.email,
+                'user_id': user.id,
+                'user_type': str(user.identity) if hasattr(user, 'identity') else None,
+                'business_id': business.id if business else None,
+                'business_name': business.name if business else None,
+                'business_referance': business.referance if business else None,
+                'business_description': business.description if business else None,
                 }
                 return data
             else:
                 user = None
                 business = None
-                return user, business
+                return None
         except Exception as e:
             print(e, "error")
             return None
