@@ -193,121 +193,91 @@ class UserLogin(APIView):
     def get_user(self, usrename):
         try:
             user = CustomUser.objects.get(username=usrename)
-            business = BusinessEntity.objects.get(name=user.businessentity)
-            return user, business
+            business = BusinessEntity.objects.get(owner=user)
+            if business or user:
+                data = {
+                    
+                    'email': user.email,
+                    'user_id': user.id,
+                    'user_type': str(user.identity) if hasattr(user, 'identity') else None,
+                    'business_id': business.id,
+                    'business_name': business.name,
+                    'business_referance': business.referance,
+                    'business_description': business.description,
+                }
+                return data
+            else:
+                user = None
+                business = None
+                return user, business
         except Exception as e:
             print(e, "error")
-            user = None
-            business = None
-            return user, business
+            return None
 
-    # def outlet_list(self, id):
-    #     try:
-    #         if id != None:
-    #             user = CustomUser.objects.select_related('outlet').filter(id=id)
-    #             outlets = Outlet.objects.filter(
-    #                 owner_id__in=Subquery(user.values("pk")))
+    def outlet_list(self, id):
+        try:
+            if id is not None:
+                user = CustomUser.objects.select_related('outlet').get(id=id)
+                outlets = Outlet.objects.filter(owner=user)
 
-    #             return outlets
-    #     except Exception as e:
-    #         print(e, "error")
-    #         return None
+                return outlets
+        except CustomUser.DoesNotExist:
+            print("User not found")
+            return None
+        except Exception as e:
+            print(e, "error")
+            return None
+
 
     def post(self, request):
         try:
             username_or_email = request.POST.get('username_or_email')
             password = request.POST.get('password')
 
-            if username_or_email and password:
+            response = cognito_client.initiate_auth(
+                ClientId=client_id,
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    'USERNAME': username_or_email,
+                    'PASSWORD': password
+                }
+            )
 
-                if '@'not in username_or_email:
-                    password = f'Qr4order@{password}'
+            if 'AuthenticationResult' in response:
+                access_token = response['AuthenticationResult']['AccessToken']
+                refresh_token = response['AuthenticationResult']['RefreshToken']
+                expires_in_seconds = response['AuthenticationResult'].get(
+                    'ExpiresIn')
 
-                response = cognito_client.initiate_auth(
-                    ClientId=client_id,
-                    AuthFlow='USER_PASSWORD_AUTH',
-                    AuthParameters={
-                        'USERNAME': username_or_email,
-                        'PASSWORD': password
-                    }
-                )
+                expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
+            
+                get_user_details = self.get_user(username_or_email)
+                # user, business = get_user_details
+                print("-=-=-==--==-=-=-=-=-=-=-=-=-",get_user_details) 
+                # outlet_data = self.outlet_list(user.id)
+                # outlet = Outlet.objects.filter(owner=user)
 
-                if 'ChallengeName' in response and response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
-                    # This code is essential for authenticating and validating users created by the owner.
-                    session = response['Session']
-                    staff_response = cognito_client.respond_to_auth_challenge(
-                        ClientId=client_id,
-                        ChallengeName='NEW_PASSWORD_REQUIRED',
-                        ChallengeResponses={
-                            'USERNAME': username_or_email,
-                            'NEW_PASSWORD': password
-                        }, Session=session)
 
-                    response = staff_response
+                data = {
+                    'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    **get_user_details,
+                    'access_token': access_token,
+                    'refresh_token': refresh_token
+                }
 
-                if 'AuthenticationResult' in response:
-                    access_token = response['AuthenticationResult']['AccessToken']
-                    refresh_token = response['AuthenticationResult']['RefreshToken']
-                    expires_in_seconds = response['AuthenticationResult'].get(
-                        'ExpiresIn')
+                    # outlet_serializer = Outlet_Serializer(
+                    #     outlet_data, many=True).data
+                    # print("-=-=-=-==-=-=",outlet_serializer)
+                    # dash_info = {
+                    #     "outlet_list": outlet_serializer,
+                    #     "user_info": data,
 
-                    expiration_time = datetime.now() + timedelta(seconds=expires_in_seconds)
-                    # silent_token_refresh(refresh_token)
-                    get_user_details = self.get_user(username_or_email)
-                    user, business = get_user_details
-                    # outlet_data = self.outlet_list(user.id)
-                    outlet = Outlet.objects.filter(owner=user)
+                    # }
+                return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
+            else:
+                return Response({'success': False, 'message': 'Access token verification failed.'})
 
-                    if username_or_email == 'test':
-                        user_type = 'Manager'
-                        data = {'user_type': user_type}
-                        return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
-                    elif username_or_email == 'test2':
-                        data = {'user_type': user_type}
-                        return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
-                        user_type = 'Waiter'
-                    else:
-                        user_type = 'Owner'
-
-                    if str(user.identity) != 'OWNER':
-
-                        data = {
-                            'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
-                            'email': user.email,
-                            'user_id': user.id,
-                            'user_type': user_type,
-                            'outlet_exists': True if outlet else False,
-                            'access_token': access_token,
-                            'refresh_token': refresh_token
-                        }
-                    else:
-                        data = {
-                            'expiration_time': expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
-                            'email': user.email,
-                            'user_id': user.id,
-                            'user_type': str(user.identity),
-                            'outlet_exists': True if outlet else False,
-                            'business_id': business.id,
-                            'business_name': business.name,
-                            'business_referance': business.referance,
-                            'business_description': business.description,
-                            'access_token': access_token,
-                            'refresh_token': refresh_token
-                        }
-
-                        # outlet_serializer = Outlet_Serializer(
-                        #     outlet_data, many=True).data
-                        # print("-=-=-=-==-=-=",outlet_serializer)
-                        # dash_info = {
-                        #     "outlet_list": outlet_serializer,
-                        #     "user_info": data,
-
-                        # }
-                    return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
-                else:
-                    return Response({'success': False, 'message': 'Access token verification failed.'})
-
-            return Response({'success': False, 'message': 'Incorrect username or password.'})
+            # return Response({'success': False, 'message': 'Incorrect username or password.'})
 
         except cognito_client.exceptions.UserNotConfirmedException:
             return Response({'success': False, 'verified': False, 'message': 'User not Verified.'})
