@@ -338,15 +338,13 @@ class StaffLogin(APIView):
 
                 return Response({'success': True, 'status_code': status.HTTP_200_OK, 'data': data, 'message': 'Authenticated User.'})
             else:
-                return Response({'success': False, 'message': 'Access token verification failed.'})
+                return Response({'success': False,'status_code':status.HTTP_401_UNAUTHORIZED, 'message': 'Access token verification failed.'})
             
-        except cognito_client.exceptions.UserNotConfirmedException:
-            return Response({'success': False, 'verified': False, 'message': 'User not Verified.'})
         except cognito_client.exceptions.NotAuthorizedException:
-            return Response({'success': False, 'message': 'Incorrect username or password.'})
+            return Response({'success': False,'status_code':status.HTTP_404_NOT_FOUND ,'message': 'Incorrect username or password.'})
         except ClientError as e:
             print(f"Authentication failed: {e}")
-            return Response({'success': False, 'message': str(e)})
+            return Response({'success': False, 'status_code':status.HTTP_500_INTERNAL_SERVER_ERROR ,'message': str(e)})
 
         
 
