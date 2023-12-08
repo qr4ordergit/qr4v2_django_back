@@ -332,6 +332,12 @@ class StaffLogin(APIView):
                         user_type = 'Manager'
                 if username_or_email == 'test2':
                         user_type = 'Waiter'
+                if username_or_email == 'test3':
+                        user_type = [{'type':'Cashier'},          
+                                    {'type':'Manager'},
+                                    {'type':'Waiter'},
+                                    {'type':'Kitchen'},
+                                        ]
                 
 
                 data = {'expires_in': expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
