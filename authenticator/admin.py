@@ -1,12 +1,8 @@
 from django.contrib import admin
-from .models import (
-     CustomUser,StaffPermissions,Operation,UserLevel,Permission,
-     GroupPermission
-)
+from .models import (CustomUser,StaffPermissions,UserLevel,Permission,
+GroupPermission,Operation)
 from django.contrib.auth.models import Group
-
 admin.site.unregister(Group)
-
 # Register your models here.
 
 class BaseReadOnlyAdminMixin:
@@ -25,7 +21,6 @@ class BaseReadOnlyAdminMixin:
         else:
             return False
         
-
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = ['email','is_verify','identity']

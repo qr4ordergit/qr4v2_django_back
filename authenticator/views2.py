@@ -12,4 +12,5 @@ class PermissionView(APIView):
         permission = self.serializer_class(permission,many=True).data
         return Response({"data":permission})
     
+
     

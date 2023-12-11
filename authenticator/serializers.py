@@ -2,7 +2,6 @@ from rest_framework import serializers
 from authenticator.models import Permission,UserLevel,Operation
 from multistore.models import *
 
-
 class UserLevel_Serializer(serializers.ModelSerializer):
     class Meta:
         model = UserLevel

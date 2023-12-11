@@ -77,7 +77,6 @@ class OutletRegistrationView(APIView):
         return Response({"message":serilizer.errors})
 
 
-
 class QrSingature(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CustomAuthentication]
@@ -106,11 +105,6 @@ class QrSingature(APIView):
     def delete(self,request,id:int):
         print(id,"delete")
         return Response({})    
-
-
-
-
-
 
 
 class LanguageDetails(APIView):

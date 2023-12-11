@@ -116,8 +116,6 @@ class OrderSession(CommonFields):
     total_tip = models.FloatField(default=0)
 
 # order_summary
-
-
 class OrderDetails(CommonFields):
     table_session = models.ForeignKey(
         OrderSession, on_delete=models.CASCADE, related_name="session_order_details")
